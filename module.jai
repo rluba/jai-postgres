@@ -150,7 +150,7 @@ check_query_result :: (query_res: *PGresult) -> has_results: bool, success: bool
 		case ExecStatusType.PGRES_FATAL_ERROR;
 			error_message: string;
 			error_message.data = PQresultErrorMessage(query_res);
-			error_message.count = str_length(error_message.data);
+			error_message.count = c_style_strlen(error_message.data);
 			report_error("Fatal error: %", error_message);
 			return false, false;
 		case;
@@ -173,7 +173,7 @@ get_results :: (query_res: *PGresult, $T: Type, $ignore_unknown := false) -> [] 
 	for col: 0..num_columns - 1 {
 		name: string;
 		name.data = PQfname(query_res, col);
-		name.count = str_length(name.data);
+		name.count = c_style_strlen(name.data);
 		member := get_field(info, name);
 		#if !ignore_unknown {
 			if !member {
