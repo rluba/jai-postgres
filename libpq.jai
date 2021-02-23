@@ -360,7 +360,8 @@ PQsetErrorContextVisibility :: (conn: *PGconn, show_context: PGContextVisibility
 // /* === in fe-exec.c === */
 
 // /* Simple synchronous query */
-// extern PGresult *PQexec(PGconn *conn, const char *query);
+PQexec :: (conn: *PGconn, query: *u8) -> *PGresult #foreign libpq;
+
 PQexecParams :: (conn: *PGconn, command: *u8, nParams: int, paramTypes: *Oid, paramValues: **u8, paramLengths: *int, paramFormats: *int, resultFormat: int) -> *PGresult #foreign libpq;
 // extern PGresult *PQprepare(PGconn *conn, const char *stmtName,
 // 						   const char *query, int nParams,
