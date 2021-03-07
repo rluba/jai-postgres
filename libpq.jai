@@ -153,8 +153,8 @@ PGnotify :: struct {
 }
 
 /* Function types for notice-handling callbacks */
-PQnoticeReceiver :: #type (arg: *void, res: *PGresult) -> void;
-PQnoticeProcessor :: #type (arg: *void, message: *u8) -> void;
+PQnoticeReceiver :: #type (arg: *void, res: *PGresult) -> void #c_call;
+PQnoticeProcessor :: #type (arg: *void, message: *u8) -> void #c_call;
 
 /* Print options for PQprint() */
 pqbool :: u8;
