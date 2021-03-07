@@ -445,7 +445,7 @@ str_from_numeric :: (data: *u8, len: int, row: int, col: int) -> string, success
 }
 
 report_error :: (format: string, args: .. Any) {
-    logprint("pg", format, .. args);
+    log_error(format, .. args);
 }
 
 #import "Basic";
