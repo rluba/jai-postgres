@@ -133,7 +133,13 @@ send_query :: (conn: *PGconn, command: string, args: .. Any) -> *PGresult {
 
 		c_command := to_c_string(command);
 
-		query_res := PQexecParams(conn, c_command, args.count, param_types.data, param_values.data, param_lengths.data, param_formats.data, 1);
+		query_res : *PGresult;
+		if args.count == 0 {
+			query_res = PQexec(conn, c_command);
+		} else {
+			query_res = PQexecParams(conn, c_command, args.count, param_types.data, param_values.data, param_lengths.data, param_formats.data, 1);
+		}
+
 		return query_res;
 	}
 }
@@ -209,19 +215,25 @@ assign_member :: (name: string, info: *Type_Info, slot: *u8, col_type: Pq_Types,
 	using Pq_Types;
 	if col_type == {
 		case INT2;
-			assert(len == 2, "Invalid int2 length: %", len);
+			// Explicitly throwing away 48 bits.
 			val := ntoh(<< cast(*s16) data);
 			return write_integer(name, info, slot, val);
 
 		case INT4;
-			assert(len == 4, "Invalid int4 length: %", len);
+			// Explicitly throwing away 32 bits.
 			val := ntoh(<< cast(*s32) data);
 			return write_integer(name, info, slot, val);
 
 		case INT8;
-			assert(len == 8, "Invalid int8 length: %", len);
 			val := ntoh(<< cast(*s64) data);
 			return write_integer(name, info, slot, val);
+
+		case FLOAT8; // Note: We get this as a string!
+			strval: string;
+			strval.data = data;
+			strval.count = len;
+			<< (cast(*float) slot) = string_to_float(strval);
+			return true;
 
 		case NUMERIC;
 			if info.type != Type_Info_Tag.STRING {
@@ -433,7 +445,7 @@ str_from_numeric :: (data: *u8, len: int, row: int, col: int) -> string, success
 }
 
 report_error :: (format: string, args: .. Any) {
-    logprint("pg", format, .. args);
+    log_error(format, .. args);
 }
 
 #import "Basic";
