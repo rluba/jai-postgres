@@ -1,6 +1,3 @@
-#import "Basic";
-#import "Compiler";
-
 IS_BIG_ENDIAN :: #run big_endian();
 
 big_endian :: () -> bool {
@@ -20,3 +17,10 @@ ntoh :: inline (value: $T) -> T {
 }
 
 hton :: ntoh;
+
+#scope_file
+
+#import "Basic";
+#import "Compiler";
+#import "Bit_Operations";
+
