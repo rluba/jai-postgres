@@ -59,89 +59,85 @@ execute :: (conn: *PGconn, command: string, args: .. Any) -> success: bool {
 send_query :: (conn: *PGconn, command: string, args: .. Any) -> *PGresult {
 	pool: Pool;
 	set_allocators(*pool);
-	// defer release(*pool);
+	defer release(*pool);
 
-	new_context := context;
-	new_context.allocator = pool_allocator;
-	new_context.allocator_data = *pool;
+	push_allocator(pool_allocator_proc, *pool);
 
-	push_context new_context {
-		param_types := NewArray(args.count, Oid, initialized = false);
-		param_values := NewArray(args.count, *u8, initialized = false);
-		param_lengths := NewArray(args.count, int, initialized = false);
-		param_formats := NewArray(args.count, int, initialized = false);
+	param_types := NewArray(args.count, Oid, initialized = false);
+	param_values := NewArray(args.count, *u8, initialized = false);
+	param_lengths := NewArray(args.count, int, initialized = false);
+	param_formats := NewArray(args.count, int, initialized = false);
 
-		for arg, index: args {
-			if arg.type.type == {
-				case Type_Info_Tag.INTEGER;
-					info := cast(*Type_Info_Integer) arg.type;
-					// @ToDo: implement unsigned ints
-					assert(info.signed, "Unsigned not yet supported");
-					be_value := cast(*u8) alloc(info.runtime_size);
-					if info.runtime_size == 2 {
-						param_types[index] = cast(Oid) Pq_Types.INT2;
-						be_val := hton(<<(cast(*s16) arg.value_pointer));
-						memcpy(be_value, *be_val, info.runtime_size);
-					}
-					if info.runtime_size == 4 {
-						param_types[index] = cast(Oid) Pq_Types.INT4;
-						be_val := hton(<<(cast(*s32) arg.value_pointer));
-						memcpy(be_value, *be_val, info.runtime_size);
-					}
-					if info.runtime_size == 8 {
-						param_types[index] = cast(Oid) Pq_Types.INT8;
-						be_val := hton(<<(cast(*s64) arg.value_pointer));
-						memcpy(be_value, *be_val, info.runtime_size);
-					}
-					// @ToDo: Assert other runtime size
-					param_values[index] = be_value;
-					param_lengths[index] = info.runtime_size;
-					param_formats[index] = 1;
+	for arg, index: args {
+		if arg.type.type == {
+			case Type_Info_Tag.INTEGER;
+				info := cast(*Type_Info_Integer) arg.type;
+				// @ToDo: implement unsigned ints
+				assert(info.signed, "Unsigned not yet supported");
+				be_value := cast(*u8) alloc(info.runtime_size);
+				if info.runtime_size == 2 {
+					param_types[index] = cast(Oid) Pq_Types.INT2;
+					be_val := hton(<<(cast(*s16) arg.value_pointer));
+					memcpy(be_value, *be_val, info.runtime_size);
+				}
+				if info.runtime_size == 4 {
+					param_types[index] = cast(Oid) Pq_Types.INT4;
+					be_val := hton(<<(cast(*s32) arg.value_pointer));
+					memcpy(be_value, *be_val, info.runtime_size);
+				}
+				if info.runtime_size == 8 {
+					param_types[index] = cast(Oid) Pq_Types.INT8;
+					be_val := hton(<<(cast(*s64) arg.value_pointer));
+					memcpy(be_value, *be_val, info.runtime_size);
+				}
+				// @ToDo: Assert other runtime size
+				param_values[index] = be_value;
+				param_lengths[index] = info.runtime_size;
+				param_formats[index] = 1;
 
-				case Type_Info_Tag.FLOAT;
-					be_value := cast(*u8) alloc(arg.type.runtime_size);
-					if arg.type.runtime_size == 4 {
-						param_types[index] = cast(Oid) Pq_Types.FLOAT4;
-						be_val := hton(<<(cast(*float) arg.value_pointer));
-						memcpy(be_value, *be_val, arg.type.runtime_size);
-					}
-					if arg.type.runtime_size == 8 {
-						param_types[index] = cast(Oid) Pq_Types.FLOAT8;
-						be_val := hton(<<(cast(*float64) arg.value_pointer));
-						memcpy(be_value, *be_val, arg.type.runtime_size);
-					}
-					param_values[index] = be_value;
-					param_lengths[index] = arg.type.runtime_size;
-					param_formats[index] = 1;
+			case Type_Info_Tag.FLOAT;
+				be_value := cast(*u8) alloc(arg.type.runtime_size);
+				if arg.type.runtime_size == 4 {
+					param_types[index] = cast(Oid) Pq_Types.FLOAT4;
+					be_val := hton(<<(cast(*float) arg.value_pointer));
+					memcpy(be_value, *be_val, arg.type.runtime_size);
+				}
+				if arg.type.runtime_size == 8 {
+					param_types[index] = cast(Oid) Pq_Types.FLOAT8;
+					be_val := hton(<<(cast(*float64) arg.value_pointer));
+					memcpy(be_value, *be_val, arg.type.runtime_size);
+				}
+				param_values[index] = be_value;
+				param_lengths[index] = arg.type.runtime_size;
+				param_formats[index] = 1;
 
-				case Type_Info_Tag.STRING;
-					str := cast(*string) arg.value_pointer;
-					param_types[index] = cast(Oid) Pq_Types.VARCHAR;
-					param_values[index] = str.data;
-					param_lengths[index] = str.count;
-					param_formats[index] = 1;
+			case Type_Info_Tag.STRING;
+				str := cast(*string) arg.value_pointer;
+				param_types[index] = cast(Oid) Pq_Types.VARCHAR;
+				param_values[index] = str.data;
+				param_lengths[index] = str.count;
+				param_formats[index] = 1;
 
-				// ToDo: Struct as Jsonb?
-				// ToDo: Array?
+			// ToDo: Struct as Jsonb?
+			// ToDo: Array?
 
-				case;
-					// @ToDo: Implement
-					report_error("Unsupported param type: %", arg.type);
-					return null;
-			}
+			case;
+				// @ToDo: Implement
+				report_error("Unsupported param type: %", arg.type);
+				return null;
 		}
-
-		c_command := to_c_string(command);
-
-		query_res : *PGresult;
-		if args.count == 0 {
-			query_res = PQexec(conn, c_command);
-		} else {
-			query_res = PQexecParams(conn, c_command, args.count, param_types.data, param_values.data, param_lengths.data, param_formats.data, 1);
-		}
-
-		return query_res;
 	}
+
+	c_command := to_c_string(command);
+
+	query_res : *PGresult;
+	if args.count == 0 {
+		query_res = PQexec(conn, c_command);
+	} else {
+		query_res = PQexecParams(conn, c_command, args.count, param_types.data, param_values.data, param_lengths.data, param_formats.data, 1);
+	}
+
+	return query_res;
 }
 
 check_query_result :: (query_res: *PGresult) -> has_results: bool, success: bool {
