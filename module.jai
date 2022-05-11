@@ -3,7 +3,7 @@ connect :: (conn_str: string) -> *PGconn, success: bool {
 	defer free(conn_c_str);
 	conn := PQconnectStart(conn_c_str);
 	if PQstatus(conn) == ConnStatusType.CONNECTION_BAD {
-		report_error("Couldn’t start connecting\n");
+		log_error("Couldn’t start connecting\n");
 		return conn, false;
 	}
 
@@ -17,7 +17,7 @@ connect :: (conn_str: string) -> *PGconn, success: bool {
 	}
 
 	if result == PostgresPollingStatusType.PGRES_POLLING_FAILED {
-		report_error("Couldn’t connect: %\n", PQstatus(conn));
+		log_error("Couldn’t connect: %\n", PQstatus(conn));
 		return conn, false;
 	}
 	return conn, true;
@@ -123,7 +123,7 @@ send_query :: (conn: *PGconn, command: string, args: .. Any) -> *PGresult {
 
 			case;
 				// @ToDo: Implement
-				report_error("Unsupported param type: %", arg.type);
+				log_error("Unsupported param type: %", arg.type);
 				return null;
 		}
 	}
@@ -153,10 +153,10 @@ check_query_result :: (query_res: *PGresult) -> has_results: bool, success: bool
 			error_message: string;
 			error_message.data = PQresultErrorMessage(query_res);
 			error_message.count = c_style_strlen(error_message.data);
-			report_error("Fatal error: %", error_message);
+			log_error("Fatal error: %", error_message);
 			return false, false;
 		case;
-			report_error("Query result status: %", res_status);
+			log_error("Query result status: %", res_status);
 			return false, false;
 	}
 }
@@ -179,7 +179,7 @@ get_results :: (query_res: *PGresult, $T: Type, $ignore_unknown := false) -> [] 
 		member := get_field(info, name);
 		#if !ignore_unknown {
 			if !member {
-				report_error("Column \"%\" has no corresponding member in struct type \"%\"", name, T);
+				log_error("Column \"%\" has no corresponding member in struct type \"%\"", name, T);
 				return results, false;
 			}
 		}
@@ -233,7 +233,7 @@ assign_member :: (name: string, info: *Type_Info, slot: *u8, col_type: Pq_Types,
 
 		case NUMERIC;
 			if info.type != Type_Info_Tag.STRING {
-				report_error("Error: Trying to write a numeric column % into member field \"%\" of type %", col, name, info.type);
+				log_error("Error: Trying to write a numeric column % into member field \"%\" of type %", col, name, info.type);
 				return false;
 			}
 			<< (cast(*string) slot) = str_from_numeric(data, len, row, col);
@@ -264,14 +264,14 @@ assign_member :: (name: string, info: *Type_Info, slot: *u8, col_type: Pq_Types,
 			return write_integer(name, info, slot, val);
 
 		case;
-			report_error("Error: column % type % (with length %) is not yet implemented (for member %)", col, col_type, len, name);
+			log_error("Error: column % type % (with length %) is not yet implemented (for member %)", col, col_type, len, name);
 			return false;
 	}
 }
 
 write_integer :: (name: string, info: *Type_Info, pointer: *void, value: s64) -> bool {
 	if info.type != Type_Info_Tag.INTEGER {
-		report_error("Error: Trying to write an integer column into member field \"%\" of type %", name, info.type);
+		log_error("Error: Trying to write an integer column into member field \"%\" of type %", name, info.type);
 		return false;
 	}
 	int_info := cast(*Type_Info_Integer) info;
@@ -280,14 +280,14 @@ write_integer :: (name: string, info: *Type_Info, pointer: *void, value: s64) ->
         valid, low, high := range_check_and_store(value, int_info, pointer);
 
         if !valid {
-            report_error("Value % is out of range for \"%\". (The value must be between % and %.)", name, value, low, high);
+            log_error("Value % is out of range for \"%\". (The value must be between % and %.)", name, value, low, high);
             return false;
         }
     } else {
         valid, low, high := range_check_and_store(cast(u64) value, int_info, pointer);  // Different overload from the above!
 
         if !valid {
-            report_error("Value % is out of range for \"%\". (The value must be between % and %.)", name, value, low, high);
+            log_error("Value % is out of range for \"%\". (The value must be between % and %.)", name, value, low, high);
             return false;
         }
     }
@@ -354,7 +354,7 @@ unsigned_integer_range_from_size :: (size_in_bytes: int) -> (low: u64, high: u64
 
 str_from_numeric :: (data: *u8, len: int, row: int, col: int) -> string, success: bool {
 	if len < 8 {
-		report_error("Invalid numeric length at row % col %: %", row, col, len);
+		log_error("Invalid numeric length at row % col %: %", row, col, len);
 		return "", false;
 	}
 
@@ -363,11 +363,11 @@ str_from_numeric :: (data: *u8, len: int, row: int, col: int) -> string, success
 	sign := ntoh(<< cast(*u16) (data + 4));
 	dscale := ntoh(<< cast(*u16) (data + 6));
 	if len != num_digits * 2 + 8 {
-		report_error("Invalid numeric length at row % col %: %", row, col, len);
+		log_error("Invalid numeric length at row % col %: %", row, col, len);
 		return "", false;
 	}
 	if dscale > 0x3fff {
-		report_error("Invalid numeric dscale at row % col %: %", row, col, dscale);
+		log_error("Invalid numeric dscale at row % col %: %", row, col, dscale);
 		return "", false;
 	}
 
@@ -384,7 +384,7 @@ str_from_numeric :: (data: *u8, len: int, row: int, col: int) -> string, success
 			append(*builder, "NaN");
 
 		case;
-			report_error("Invalid numeric sign at row % col%: %", row, col, sign);
+			log_error("Invalid numeric sign at row % col%: %", row, col, sign);
 			return "", false;
 	}
 
@@ -438,10 +438,6 @@ str_from_numeric :: (data: *u8, len: int, row: int, col: int) -> string, success
 	}
 
 	return builder_to_string(*builder), true;
-}
-
-report_error :: (format: string, args: .. Any) {
-    log_error(format, .. args);
 }
 
 #import "Basic";
