@@ -590,4 +590,4 @@ PQclear :: (res: *PGresult) -> void #foreign libpq;
 
 #scope_file
 
-libpq :: #foreign_system_library "libpq";
+libpq :: #system_library "libpq";
