@@ -53,9 +53,6 @@ execute :: (conn: *PGconn, command: string, args: .. Any) -> success: bool {
 
 #scope_file
 
-#load "byte_order.jai";
-#load "libpq.jai";
-
 send_query :: (conn: *PGconn, command: string, args: .. Any) -> *PGresult {
 	pool: Pool;
 	set_allocators(*pool);
@@ -442,3 +439,6 @@ str_from_numeric :: (data: *u8, len: int, row: int, col: int) -> string, success
 
 #import "Basic";
 #import "Pool";
+
+#load "byte_order.jai";
+#load "libpq.jai";

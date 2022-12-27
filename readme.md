@@ -64,7 +64,7 @@ Using a Pool allocator around your `execute` calls might be a good idea.
 * `float` and `float64`
 * `string`
 
-## Supportet return value column types
+## Supported return value column types
 
 * `INT2`, `INT4`, `INT8`
 * `NUMERIC`
