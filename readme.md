@@ -68,5 +68,7 @@ Using a Pool allocator around your `execute` calls might be a good idea.
 
 * `INT2`, `INT4`, `INT8`
 * `NUMERIC`
+* `BOOL`
 * `CHAR`, `BPCHAR`, `VARCHAR`, `TEXT`
 * `TIMESTAMP`, `TIMESTAMPTZ`
+* Custom enum types (`CREATE TYPE … AS ENUM`), which can parsed into string or enum member fields.

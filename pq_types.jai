@@ -8,7 +8,7 @@
  // AND typelem = 0 -- Ignore aliases
  // AND typisdefined -- Ignore undefined types
 
-Pq_Types :: enum Oid {
+Pq_Type :: enum Oid {
 	BOOL            :: 16;
 	BYTEA           :: 17;
 	CHAR            :: 18;

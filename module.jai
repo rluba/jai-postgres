@@ -34,7 +34,7 @@ execute :: (conn: *PGconn, $T: Type, command: string, args: .. Any, $ignore_unkn
     success := send_query(conn, command, ..args);
     if !success return .[], false;
 
-	query_res := get_last_query_result(conn);
+    query_res := get_last_query_result(conn);
     defer PQclear(query_res);
 
     has_results: bool;
@@ -53,7 +53,7 @@ execute :: (conn: *PGconn, command: string, args: .. Any) -> success: bool {
     success := send_query(conn, command, ..args);
     if !success false;
 
-	query_res := get_last_query_result(conn);
+    query_res := get_last_query_result(conn);
     defer PQclear(query_res);
 
     has_results: bool;
@@ -82,17 +82,17 @@ send_query :: (conn: *PGconn, command: string, args: .. Any) -> success: bool {
                 assert(info.signed, "Unsigned not yet supported");
                 be_value := cast(*u8) alloc(info.runtime_size);
                 if info.runtime_size == 2 {
-                    param_types[index] = cast(Oid) Pq_Types.INT2;
+                    param_types[index] = cast(Oid) Pq_Type.INT2;
                     be_val := hton(<<(cast(*s16) arg.value_pointer));
                     memcpy(be_value, *be_val, info.runtime_size);
                 }
                 if info.runtime_size == 4 {
-                    param_types[index] = cast(Oid) Pq_Types.INT4;
+                    param_types[index] = cast(Oid) Pq_Type.INT4;
                     be_val := hton(<<(cast(*s32) arg.value_pointer));
                     memcpy(be_value, *be_val, info.runtime_size);
                 }
                 if info.runtime_size == 8 {
-                    param_types[index] = cast(Oid) Pq_Types.INT8;
+                    param_types[index] = cast(Oid) Pq_Type.INT8;
                     be_val := hton(<<(cast(*s64) arg.value_pointer));
                     memcpy(be_value, *be_val, info.runtime_size);
                 }
@@ -104,12 +104,12 @@ send_query :: (conn: *PGconn, command: string, args: .. Any) -> success: bool {
             case Type_Info_Tag.FLOAT;
                 be_value := cast(*u8) alloc(arg.type.runtime_size);
                 if arg.type.runtime_size == 4 {
-                    param_types[index] = cast(Oid) Pq_Types.FLOAT4;
+                    param_types[index] = cast(Oid) Pq_Type.FLOAT4;
                     be_val := hton(<<(cast(*float) arg.value_pointer));
                     memcpy(be_value, *be_val, arg.type.runtime_size);
                 }
                 if arg.type.runtime_size == 8 {
-                    param_types[index] = cast(Oid) Pq_Types.FLOAT8;
+                    param_types[index] = cast(Oid) Pq_Type.FLOAT8;
                     be_val := hton(<<(cast(*float64) arg.value_pointer));
                     memcpy(be_value, *be_val, arg.type.runtime_size);
                 }
@@ -119,7 +119,7 @@ send_query :: (conn: *PGconn, command: string, args: .. Any) -> success: bool {
 
             case Type_Info_Tag.STRING;
                 str := cast(*string) arg.value_pointer;
-                param_types[index] = cast(Oid) Pq_Types.VARCHAR;
+                param_types[index] = cast(Oid) Pq_Type.VARCHAR;
                 param_values[index] = str.data;
                 param_lengths[index] = cast(s32) str.count;
                 param_formats[index] = 1;
@@ -150,7 +150,7 @@ send_query :: (conn: *PGconn, command: string, args: .. Any) -> success: bool {
         return false;
     }
 
-	return true;
+    return true;
 }
 
 
@@ -188,23 +188,23 @@ check_query_result :: (query_res: *PGresult) -> has_results: bool, success: bool
 }
 
 get_results :: (query_res: *PGresult, $T: Type, $ignore_unknown := false) -> [] T, success: bool {
-	raw_result, success := get_results(query_res, type_info(T), ignore_unknown);
-	return xx raw_result, success;
+    raw_result, success := get_results(query_res, type_info(T), ignore_unknown);
+    return xx raw_result, success;
 }
 
 get_results :: (query_res: *PGresult, info: *Type_Info, ignore_unknown := false) -> Array_View_64, success: bool {
     // @ToDo: Allow to cast single-column results directly to primitive types
-	assert(info.type == .STRUCT);
-	info_struct := cast(*Type_Info_Struct) info;
+    assert(info.type == .STRUCT);
+    info_struct := cast(*Type_Info_Struct) info;
 
     num_tuples := PQntuples(query_res);
-	results: Array_View_64;
-	results.data = alloc(info.runtime_size * num_tuples);
-	results.count = num_tuples;
-	initializer := info_struct.initializer;
-	if !initializer {
-		memset(results.data, 0, info.runtime_size * num_tuples);
-	}
+    results: Array_View_64;
+    results.data = alloc(info.runtime_size * num_tuples);
+    results.count = num_tuples;
+    initializer := info_struct.initializer;
+    if !initializer {
+        memset(results.data, 0, info.runtime_size * num_tuples);
+    }
 
     num_columns := PQnfields(query_res);
     column_members := NewArray(num_columns, *Type_Info_Struct_Member, initialized = false);
@@ -215,16 +215,16 @@ get_results :: (query_res: *PGresult, info: *Type_Info, ignore_unknown := false)
         name.data = PQfname(query_res, col);
         name.count = c_style_strlen(name.data);
         member := get_field(info_struct, name);
-		if !ignore_unknown && !member {
-			log_error("Column \"%\" has no corresponding member in struct type \"%\"", name, <<info_struct);
-			return results, false;
+        if !ignore_unknown && !member {
+            log_error("Column \"%\" has no corresponding member in struct type \"%\"", name, <<info_struct);
+            return results, false;
         }
         column_members[col] = member;
     }
 
     for row: 0..num_tuples - 1 {
-		row_data := results.data + (info.runtime_size * row);
-		if initializer initializer(row_data);
+        row_data := results.data + (info.runtime_size * row);
+        if initializer initializer(row_data);
 
         for col: 0..num_columns - 1 {
             member := column_members[col];
@@ -238,7 +238,7 @@ get_results :: (query_res: *PGresult, info: *Type_Info, ignore_unknown := false)
                 len := PQgetlength(query_res, row, col);
                 data := PQgetvalue(query_res, row, col);
                 slot := row_data + member.offset_in_bytes;
-                success := assign_member(member.name, member.type, slot, cast(Pq_Types) type, len, data, row, col);
+                success := assign_member(member.name, member.type, slot, cast(Pq_Type) type, len, data, row, col);
                 if !success        return results, false;
             }
         }
@@ -249,71 +249,126 @@ get_results :: (query_res: *PGresult, info: *Type_Info, ignore_unknown := false)
 
 #scope_module
 
-assign_member :: (name: string, info: *Type_Info, slot: *u8, col_type: Pq_Types, len: int, data: *u8, row: int, col: int) -> bool {
-    using Pq_Types;
+assign_member :: (name: string, info: *Type_Info, slot: *u8, col_type: Pq_Type, len: int, data: *u8, row: int, col: int) -> bool {
     if col_type == {
-        case INT2;
+        case .INT2;
             // Explicitly throwing away 48 bits.
             val := ntoh(<< cast(*s16) data);
-            return write_integer(name, info, slot, val);
+            return write_integer(col, name, info, slot, val);
 
-        case INT4;
+        case .INT4;
             // Explicitly throwing away 32 bits.
             val := ntoh(<< cast(*s32) data);
-            return write_integer(name, info, slot, val);
+            return write_integer(col, name, info, slot, val);
 
-        case INT8;
+        case .INT8;
             val := ntoh(<< cast(*s64) data);
-            return write_integer(name, info, slot, val);
+            return write_integer(col, name, info, slot, val);
 
-        case FLOAT8; // Note: We get this as a string!
+        case .FLOAT8; // Note: We get this as a string!
+            if info.type != Type_Info_Tag.FLOAT {
+                log_error("Error: Trying to write float column % into member field \"%\" of type %", col, name, info.type);
+                return false;
+            }
+
             strval: string;
             strval.data = data;
             strval.count = len;
-            << (cast(*float) slot) = string_to_float(strval);
+            success: bool;
+            if info.runtime_size == 4 {
+                << (cast(*float) slot), success = string_to_float(strval);
+            } else {
+                assert(info.runtime_size == 8);
+                << (cast(*float64) slot), success = string_to_float64(strval);
+            }
+            assert(success, "Could not parse string \"%\" as float", strval);
             return true;
 
-        case NUMERIC;
+        case .NUMERIC;
             if info.type != Type_Info_Tag.STRING {
-                log_error("Error: Trying to write a numeric column % into member field \"%\" of type %", col, name, info.type);
+                log_error("Error: Trying to write numeric column % into member field \"%\" of type %", col, name, info.type);
                 return false;
             }
             << (cast(*string) slot) = str_from_numeric(data, len, row, col);
             return true;
 
-        case CHAR; #through;
-        case BPCHAR; #through;
-        case VARCHAR; #through;
-        case TEXT;
+        case .BOOL;
+            assert(len == 1);
+            if info.type != Type_Info_Tag.BOOL {
+                log_error("Error: Trying to write bool column % into member field \"%\" of type %", col, name, info.type);
+                return false;
+            }
+
+            val := << cast(*u8) data;
+            << (cast(*bool) slot) = (val != 0);
+            return true;
+
+        case .CHAR; #through;
+        case .BPCHAR; #through;
+        case .VARCHAR; #through;
+        case .TEXT;
             val: string;
             val.data = data;
             val.count = len;
-            << (cast(*string) slot) = copy_string(val);
+            write_string_value(col, name, info, slot, val, is_custom = false);
             return true;
 
-        case TIMESTAMP;
+        case .TIMESTAMP;
             val := ntoh(<< cast(*s64) data);
             // shift from 2000 to 1970
             val += 946_684_800_000000;
             // @ToDO, @Incomplete: Support a special structure that keeps track of is_utc flag?
-            return write_integer(name, info, slot, val);
+            return write_integer(col, name, info, slot, val);
 
-        case TIMESTAMPTZ;
+        case .TIMESTAMPTZ;
             val := ntoh(<< cast(*s64) data);
             // shift from 2000 to 1970
             val += 946_684_800_000000;
             // @ToDO, @Incomplete: Support a special structure that keeps track of is_utc flag?
-            return write_integer(name, info, slot, val);
+            return write_integer(col, name, info, slot, val);
 
         case;
-            log_error("Error: column % type % (with length %) is not yet implemented (for member %)", col, col_type, len, name);
+            if cast(s64) col_type > enum_highest_value(Pq_Type) {
+                // Seems to be a custom type. Try to interpret it as a string
+                val: string;
+                val.data = data;
+                val.count = len;
+                return write_string_value(col, name, info, slot, val, is_custom = true);
+            } else {
+                log_error("Error: column % type % (with length %) is not yet implemented (for member %)", col, col_type, len, name);
+            }
             return false;
     }
 }
 
-write_integer :: (name: string, info: *Type_Info, pointer: *void, value: s64) -> bool {
+write_string_value :: (col: int, name: string, info: *Type_Info, slot: *void, value: string, is_custom: bool) -> bool {
+    if info.type == {
+        case .STRING;
+            << (cast(*string) slot) = copy_string(value);
+            return true;
+        case .ENUM;
+            info_enum := cast(*Type_Info_Enum) info;
+            for info_enum.names {
+                if it == value {
+                    return write_integer(col, name, info_enum.internal_type, slot, info_enum.values[it_index]);
+                }
+            }
+
+            log_error("Error: Could not find an enum value for value \"%\" of column % for member field \"%\"", value, col, name);
+            return false;
+        case;
+            if is_custom {
+                log_error("Error: Trying to write custom type of column % into member field \"%\" of type %", col, name, info.type);
+            } else {
+                log_error("Error: Trying to write string column % into member field \"%\" of type %", col, name, info.type);
+            }
+            return false;
+    }
+}
+
+write_integer :: (col: int, name: string, info: *Type_Info, pointer: *void, value: s64) -> bool {
     if info.type != Type_Info_Tag.INTEGER {
-        log_error("Error: Trying to write an integer column into member field \"%\" of type %", name, info.type);
+        log_error("Error: Trying to write integer column % into member field \"%\" of type %", col, name, info.type);
         return false;
     }
     int_info := cast(*Type_Info_Integer) info;
@@ -322,14 +377,14 @@ write_integer :: (name: string, info: *Type_Info, pointer: *void, value: s64) ->
         valid, low, high := range_check_and_store(value, int_info, pointer);
 
         if !valid {
-            log_error("Value % is out of range for \"%\". (The value must be between % and %.)", name, value, low, high);
+            log_error("Value % of column % is out of range for \"%\". (The value must be between % and %.)", value, col, name, low, high);
             return false;
         }
     } else {
         valid, low, high := range_check_and_store(cast(u64) value, int_info, pointer);  // Different overload from the above!
 
         if !valid {
-            log_error("Value % is out of range for \"%\". (The value must be between % and %.)", name, value, low, high);
+            log_error("Value % of column % is out of range for \"%\". (The value must be between % and %.)", value, col, name, low, high);
             return false;
         }
     }
