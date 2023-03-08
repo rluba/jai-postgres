@@ -254,16 +254,16 @@ assign_member :: (name: string, info: *Type_Info, slot: *u8, col_type: Pq_Type, 
         case .INT2;
             // Explicitly throwing away 48 bits.
             val := ntoh(<< cast(*s16) data);
-            return write_integer(col, name, info, slot, val);
+            return write_integer(col, name, info, slot, col_type, val);
 
         case .INT4;
             // Explicitly throwing away 32 bits.
             val := ntoh(<< cast(*s32) data);
-            return write_integer(col, name, info, slot, val);
+            return write_integer(col, name, info, slot, col_type, val);
 
         case .INT8;
             val := ntoh(<< cast(*s64) data);
-            return write_integer(col, name, info, slot, val);
+            return write_integer(col, name, info, slot, col_type, val);
 
         case .FLOAT8; // Note: We get this as a string!
             if info.type != Type_Info_Tag.FLOAT {
@@ -310,22 +310,32 @@ assign_member :: (name: string, info: *Type_Info, slot: *u8, col_type: Pq_Type, 
             val: string;
             val.data = data;
             val.count = len;
-            write_string_value(col, name, info, slot, val, is_custom = false);
+            write_string_value(col, name, info, slot, col_type, val, is_custom = false);
             return true;
 
         case .TIMESTAMP;
             val := ntoh(<< cast(*s64) data);
             // shift from 2000 to 1970
             val += 946_684_800_000000;
-            // @ToDO, @Incomplete: Support a special structure that keeps track of is_utc flag?
-            return write_integer(col, name, info, slot, val);
+            if info.type == .STRING {
+                ts: timespec;
+                ts.tv_sec = val / 1_000_000;
+                ts.tv_nsec = (val % 1_000_000) * 1000;
+                apollo := timespec_to_apollo(ts);
+                calendar := to_calendar(apollo);
+                iso := calendar_to_iso_string(calendar);
+                return write_string_value(col, name, info, slot, col_type, iso, is_custom = false);
+            } else {
+                // @ToDO, @Incomplete: Support a special structure that keeps track of is_utc flag?
+                return write_integer(col, name, info, slot, col_type, val);
+            }
 
         case .TIMESTAMPTZ;
             val := ntoh(<< cast(*s64) data);
             // shift from 2000 to 1970
             val += 946_684_800_000000;
             // @ToDO, @Incomplete: Support a special structure that keeps track of is_utc flag?
-            return write_integer(col, name, info, slot, val);
+            return write_integer(col, name, info, slot, col_type, val);
 
         case;
             if cast(s64) col_type > enum_highest_value(Pq_Type) {
@@ -333,7 +343,7 @@ assign_member :: (name: string, info: *Type_Info, slot: *u8, col_type: Pq_Type, 
                 val: string;
                 val.data = data;
                 val.count = len;
-                return write_string_value(col, name, info, slot, val, is_custom = true);
+                return write_string_value(col, name, info, slot, col_type, val, is_custom = true);
             } else {
                 log_error("Error: column % type % (with length %) is not yet implemented (for member %)", col, col_type, len, name);
             }
@@ -341,7 +351,7 @@ assign_member :: (name: string, info: *Type_Info, slot: *u8, col_type: Pq_Type, 
     }
 }
 
-write_string_value :: (col: int, name: string, info: *Type_Info, slot: *void, value: string, is_custom: bool) -> bool {
+write_string_value :: (col: int, name: string, info: *Type_Info, slot: *void, col_type: Pq_Type, value: string, is_custom: bool) -> bool {
     if info.type == {
         case .STRING;
             << (cast(*string) slot) = copy_string(value);
@@ -350,7 +360,7 @@ write_string_value :: (col: int, name: string, info: *Type_Info, slot: *void, va
             info_enum := cast(*Type_Info_Enum) info;
             for info_enum.names {
                 if it == value {
-                    return write_integer(col, name, info_enum.internal_type, slot, info_enum.values[it_index]);
+                    return write_integer(col, name, info_enum.internal_type, slot, col_type, info_enum.values[it_index]);
                 }
             }
 
@@ -360,15 +370,15 @@ write_string_value :: (col: int, name: string, info: *Type_Info, slot: *void, va
             if is_custom {
                 log_error("Error: Trying to write custom type of column % into member field \"%\" of type %", col, name, info.type);
             } else {
-                log_error("Error: Trying to write string column % into member field \"%\" of type %", col, name, info.type);
+                log_error("Error: Trying to write column % of type % into member field \"%\" of type %", col, col_type, name, info.type);
             }
             return false;
     }
 }
 
-write_integer :: (col: int, name: string, info: *Type_Info, pointer: *void, value: s64) -> bool {
+write_integer :: (col: int, name: string, info: *Type_Info, pointer: *void, col_type: Pq_Type, value: s64) -> bool {
     if info.type != Type_Info_Tag.INTEGER {
-        log_error("Error: Trying to write integer column % into member field \"%\" of type %", col, name, info.type);
+        log_error("Error: Trying to write column % of type % as an integer into member field \"%\" of type %", col, col_type, name, info.type);
         return false;
     }
     int_info := cast(*Type_Info_Integer) info;
