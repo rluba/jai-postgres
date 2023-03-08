@@ -81,22 +81,22 @@ send_query :: (conn: *PGconn, command: string, args: .. Any) -> success: bool {
                 // @ToDo: implement unsigned ints
                 assert(info.signed, "Unsigned not yet supported");
                 be_value := cast(*u8) alloc(info.runtime_size);
-                if info.runtime_size == 2 {
-                    param_types[index] = cast(Oid) Pq_Type.INT2;
-                    be_val := hton(<<(cast(*s16) arg.value_pointer));
-                    memcpy(be_value, *be_val, info.runtime_size);
+                if info.runtime_size == {
+                    case 2;
+                        param_types[index] = cast(Oid) Pq_Type.INT2;
+                        be_val := hton(<<(cast(*s16) arg.value_pointer));
+                        memcpy(be_value, *be_val, info.runtime_size);
+                    case 4;
+                        param_types[index] = cast(Oid) Pq_Type.INT4;
+                        be_val := hton(<<(cast(*s32) arg.value_pointer));
+                        memcpy(be_value, *be_val, info.runtime_size);
+                    case 8;
+                        param_types[index] = cast(Oid) Pq_Type.INT8;
+                        be_val := hton(<<(cast(*s64) arg.value_pointer));
+                        memcpy(be_value, *be_val, info.runtime_size);
+                    case;
+                        assert(false);
                 }
-                if info.runtime_size == 4 {
-                    param_types[index] = cast(Oid) Pq_Type.INT4;
-                    be_val := hton(<<(cast(*s32) arg.value_pointer));
-                    memcpy(be_value, *be_val, info.runtime_size);
-                }
-                if info.runtime_size == 8 {
-                    param_types[index] = cast(Oid) Pq_Type.INT8;
-                    be_val := hton(<<(cast(*s64) arg.value_pointer));
-                    memcpy(be_value, *be_val, info.runtime_size);
-                }
-                // @ToDo: Assert other runtime size
                 param_values[index] = be_value;
                 param_lengths[index] = cast(s32) info.runtime_size;
                 param_formats[index] = 1;
