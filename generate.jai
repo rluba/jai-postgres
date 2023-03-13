@@ -35,6 +35,7 @@ generate_bindings :: () -> bool {
             output_filename          = "bindings/windows.jai";
         } else #if OS == .LINUX {
             output_filename          = "bindings/unix.jai";
+			array_add(*include_paths, "/usr/include/postgresql");
 			generate_library_declarations = false;
 			footer = FOOTER_UNIX;
         } else #if OS == .MACOS {

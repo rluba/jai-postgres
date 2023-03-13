@@ -1,27 +1,17 @@
 //
 // This file was auto-generated using the following command:
 //
-// jai -no_color -quiet modules/postgres/generate.jai -import_dir /Users/raphael/Projekte/fabman/api_jai/modules
+// jai generate.jai
 //
 
 
 
 InvalidOid :: cast(Oid) 0;
 
-LIBPQ_HAS_PIPELINING :: 1;
-
-LIBPQ_HAS_TRACE_FLAGS :: 1;
-
 PG_COPYRES_ATTRS :: 0x01;
 PG_COPYRES_TUPLES :: 0x02;
 PG_COPYRES_EVENTS :: 0x04;
 PG_COPYRES_NOTICEHOOKS :: 0x08;
-
-PQTRACE_SUPPRESS_TIMESTAMPS :: 1<<0;
-
-PQTRACE_REGRESS_MODE :: 1<<1;
-
-PQ_QUERY_PARAM_MAX_LIMIT :: 65535;
 
 PQnoPasswordSupplied :: "fe_sendauth: no password supplied\n";
 
@@ -52,10 +42,8 @@ ConnStatusType :: enum u32 {
     CONNECTION_SSL_STARTUP       :: 7;
     CONNECTION_NEEDED            :: 8;
     CONNECTION_CHECK_WRITABLE    :: 9;
+
     CONNECTION_CONSUME           :: 10;
-    CONNECTION_GSS_STARTUP       :: 11;
-    CONNECTION_CHECK_TARGET      :: 12;
-    CONNECTION_CHECK_STANDBY     :: 13;
 }
 
 PostgresPollingStatusType :: enum u32 {
@@ -67,21 +55,19 @@ PostgresPollingStatusType :: enum u32 {
 }
 
 ExecStatusType :: enum u32 {
-    PGRES_EMPTY_QUERY      :: 0;
-    PGRES_COMMAND_OK       :: 1;
+    PGRES_EMPTY_QUERY    :: 0;
+    PGRES_COMMAND_OK     :: 1;
 
-    PGRES_TUPLES_OK        :: 2;
+    PGRES_TUPLES_OK      :: 2;
 
-    PGRES_COPY_OUT         :: 3;
-    PGRES_COPY_IN          :: 4;
-    PGRES_BAD_RESPONSE     :: 5;
+    PGRES_COPY_OUT       :: 3;
+    PGRES_COPY_IN        :: 4;
+    PGRES_BAD_RESPONSE   :: 5;
 
-    PGRES_NONFATAL_ERROR   :: 6;
-    PGRES_FATAL_ERROR      :: 7;
-    PGRES_COPY_BOTH        :: 8;
-    PGRES_SINGLE_TUPLE     :: 9;
-    PGRES_PIPELINE_SYNC    :: 10;
-    PGRES_PIPELINE_ABORTED :: 11;
+    PGRES_NONFATAL_ERROR :: 6;
+    PGRES_FATAL_ERROR    :: 7;
+    PGRES_COPY_BOTH      :: 8;
+    PGRES_SINGLE_TUPLE   :: 9;
 }
 
 PGTransactionStatusType :: enum u32 {
@@ -93,10 +79,9 @@ PGTransactionStatusType :: enum u32 {
 }
 
 PGVerbosity :: enum u32 {
-    PQERRORS_TERSE    :: 0;
-    PQERRORS_DEFAULT  :: 1;
-    PQERRORS_VERBOSE  :: 2;
-    PQERRORS_SQLSTATE :: 3;
+    PQERRORS_TERSE   :: 0;
+    PQERRORS_DEFAULT :: 1;
+    PQERRORS_VERBOSE :: 2;
 }
 
 PGContextVisibility :: enum u32 {
@@ -114,15 +99,6 @@ PGPing :: enum u32 {
     PQPING_REJECT      :: 1;
     PQPING_NO_RESPONSE :: 2;
     PQPING_NO_ATTEMPT  :: 3;
-}
-
-/*
-* PGpipelineStatus - Current status of pipeline mode
-*/
-PGpipelineStatus :: enum u32 {
-    PQ_PIPELINE_OFF     :: 0;
-    PQ_PIPELINE_ON      :: 1;
-    PQ_PIPELINE_ABORTED :: 2;
 }
 
 pg_conn :: struct {}
@@ -159,18 +135,6 @@ pgNotify :: struct {
 
     next:    *pgNotify; /* list link */
 }
-#run {
-    instance: pgNotify;
-    assert(((cast(*void)(*instance.relname)) - cast(*void)(*instance)) == 0, "pgNotify.relname has unexpected offset % instead of 0", ((cast(*void)(*instance.relname)) - cast(*void)(*instance)));
-    assert(size_of(type_of(pgNotify.relname)) == 8, "pgNotify.relname has unexpected size % instead of 8", size_of(type_of(pgNotify.relname)));
-    assert(((cast(*void)(*instance.be_pid)) - cast(*void)(*instance)) == 8, "pgNotify.be_pid has unexpected offset % instead of 8", ((cast(*void)(*instance.be_pid)) - cast(*void)(*instance)));
-    assert(size_of(type_of(pgNotify.be_pid)) == 4, "pgNotify.be_pid has unexpected size % instead of 4", size_of(type_of(pgNotify.be_pid)));
-    assert(((cast(*void)(*instance.extra)) - cast(*void)(*instance)) == 16, "pgNotify.extra has unexpected offset % instead of 16", ((cast(*void)(*instance.extra)) - cast(*void)(*instance)));
-    assert(size_of(type_of(pgNotify.extra)) == 8, "pgNotify.extra has unexpected size % instead of 8", size_of(type_of(pgNotify.extra)));
-    assert(((cast(*void)(*instance.next)) - cast(*void)(*instance)) == 24, "pgNotify.next has unexpected offset % instead of 24", ((cast(*void)(*instance.next)) - cast(*void)(*instance)));
-    assert(size_of(type_of(pgNotify.next)) == 8, "pgNotify.next has unexpected size % instead of 8", size_of(type_of(pgNotify.next)));
-    assert(size_of(pgNotify) == 32, "pgNotify has size % instead of 32", size_of(pgNotify));
-}
 
 /* PGnotify represents the occurrence of a NOTIFY message.
 * Ideally this would be an opaque typedef, but it's so simple that it's
@@ -201,30 +165,6 @@ _PQprintOpt :: struct {
     * names */
     fieldName: **u8;
 }
-#run {
-    instance: _PQprintOpt;
-    assert(((cast(*void)(*instance.header)) - cast(*void)(*instance)) == 0, "_PQprintOpt.header has unexpected offset % instead of 0", ((cast(*void)(*instance.header)) - cast(*void)(*instance)));
-    assert(size_of(type_of(_PQprintOpt.header)) == 1, "_PQprintOpt.header has unexpected size % instead of 1", size_of(type_of(_PQprintOpt.header)));
-    assert(((cast(*void)(*instance.align)) - cast(*void)(*instance)) == 1, "_PQprintOpt.align has unexpected offset % instead of 1", ((cast(*void)(*instance.align)) - cast(*void)(*instance)));
-    assert(size_of(type_of(_PQprintOpt.align)) == 1, "_PQprintOpt.align has unexpected size % instead of 1", size_of(type_of(_PQprintOpt.align)));
-    assert(((cast(*void)(*instance.standard)) - cast(*void)(*instance)) == 2, "_PQprintOpt.standard has unexpected offset % instead of 2", ((cast(*void)(*instance.standard)) - cast(*void)(*instance)));
-    assert(size_of(type_of(_PQprintOpt.standard)) == 1, "_PQprintOpt.standard has unexpected size % instead of 1", size_of(type_of(_PQprintOpt.standard)));
-    assert(((cast(*void)(*instance.html3)) - cast(*void)(*instance)) == 3, "_PQprintOpt.html3 has unexpected offset % instead of 3", ((cast(*void)(*instance.html3)) - cast(*void)(*instance)));
-    assert(size_of(type_of(_PQprintOpt.html3)) == 1, "_PQprintOpt.html3 has unexpected size % instead of 1", size_of(type_of(_PQprintOpt.html3)));
-    assert(((cast(*void)(*instance.expanded)) - cast(*void)(*instance)) == 4, "_PQprintOpt.expanded has unexpected offset % instead of 4", ((cast(*void)(*instance.expanded)) - cast(*void)(*instance)));
-    assert(size_of(type_of(_PQprintOpt.expanded)) == 1, "_PQprintOpt.expanded has unexpected size % instead of 1", size_of(type_of(_PQprintOpt.expanded)));
-    assert(((cast(*void)(*instance.pager)) - cast(*void)(*instance)) == 5, "_PQprintOpt.pager has unexpected offset % instead of 5", ((cast(*void)(*instance.pager)) - cast(*void)(*instance)));
-    assert(size_of(type_of(_PQprintOpt.pager)) == 1, "_PQprintOpt.pager has unexpected size % instead of 1", size_of(type_of(_PQprintOpt.pager)));
-    assert(((cast(*void)(*instance.fieldSep)) - cast(*void)(*instance)) == 8, "_PQprintOpt.fieldSep has unexpected offset % instead of 8", ((cast(*void)(*instance.fieldSep)) - cast(*void)(*instance)));
-    assert(size_of(type_of(_PQprintOpt.fieldSep)) == 8, "_PQprintOpt.fieldSep has unexpected size % instead of 8", size_of(type_of(_PQprintOpt.fieldSep)));
-    assert(((cast(*void)(*instance.tableOpt)) - cast(*void)(*instance)) == 16, "_PQprintOpt.tableOpt has unexpected offset % instead of 16", ((cast(*void)(*instance.tableOpt)) - cast(*void)(*instance)));
-    assert(size_of(type_of(_PQprintOpt.tableOpt)) == 8, "_PQprintOpt.tableOpt has unexpected size % instead of 8", size_of(type_of(_PQprintOpt.tableOpt)));
-    assert(((cast(*void)(*instance.caption)) - cast(*void)(*instance)) == 24, "_PQprintOpt.caption has unexpected offset % instead of 24", ((cast(*void)(*instance.caption)) - cast(*void)(*instance)));
-    assert(size_of(type_of(_PQprintOpt.caption)) == 8, "_PQprintOpt.caption has unexpected size % instead of 8", size_of(type_of(_PQprintOpt.caption)));
-    assert(((cast(*void)(*instance.fieldName)) - cast(*void)(*instance)) == 32, "_PQprintOpt.fieldName has unexpected offset % instead of 32", ((cast(*void)(*instance.fieldName)) - cast(*void)(*instance)));
-    assert(size_of(type_of(_PQprintOpt.fieldName)) == 8, "_PQprintOpt.fieldName has unexpected size % instead of 8", size_of(type_of(_PQprintOpt.fieldName)));
-    assert(size_of(_PQprintOpt) == 40, "_PQprintOpt has size % instead of 40", size_of(_PQprintOpt));
-}
 
 PQprintOpt :: _PQprintOpt;
 
@@ -252,24 +192,6 @@ _PQconninfoOption :: struct {
 
     dispsize: s32; /* Field size in characters for dialog	*/
 }
-#run {
-    instance: _PQconninfoOption;
-    assert(((cast(*void)(*instance.keyword)) - cast(*void)(*instance)) == 0, "_PQconninfoOption.keyword has unexpected offset % instead of 0", ((cast(*void)(*instance.keyword)) - cast(*void)(*instance)));
-    assert(size_of(type_of(_PQconninfoOption.keyword)) == 8, "_PQconninfoOption.keyword has unexpected size % instead of 8", size_of(type_of(_PQconninfoOption.keyword)));
-    assert(((cast(*void)(*instance.envvar)) - cast(*void)(*instance)) == 8, "_PQconninfoOption.envvar has unexpected offset % instead of 8", ((cast(*void)(*instance.envvar)) - cast(*void)(*instance)));
-    assert(size_of(type_of(_PQconninfoOption.envvar)) == 8, "_PQconninfoOption.envvar has unexpected size % instead of 8", size_of(type_of(_PQconninfoOption.envvar)));
-    assert(((cast(*void)(*instance.compiled)) - cast(*void)(*instance)) == 16, "_PQconninfoOption.compiled has unexpected offset % instead of 16", ((cast(*void)(*instance.compiled)) - cast(*void)(*instance)));
-    assert(size_of(type_of(_PQconninfoOption.compiled)) == 8, "_PQconninfoOption.compiled has unexpected size % instead of 8", size_of(type_of(_PQconninfoOption.compiled)));
-    assert(((cast(*void)(*instance.val)) - cast(*void)(*instance)) == 24, "_PQconninfoOption.val has unexpected offset % instead of 24", ((cast(*void)(*instance.val)) - cast(*void)(*instance)));
-    assert(size_of(type_of(_PQconninfoOption.val)) == 8, "_PQconninfoOption.val has unexpected size % instead of 8", size_of(type_of(_PQconninfoOption.val)));
-    assert(((cast(*void)(*instance.label)) - cast(*void)(*instance)) == 32, "_PQconninfoOption.label has unexpected offset % instead of 32", ((cast(*void)(*instance.label)) - cast(*void)(*instance)));
-    assert(size_of(type_of(_PQconninfoOption.label)) == 8, "_PQconninfoOption.label has unexpected size % instead of 8", size_of(type_of(_PQconninfoOption.label)));
-    assert(((cast(*void)(*instance.dispchar)) - cast(*void)(*instance)) == 40, "_PQconninfoOption.dispchar has unexpected offset % instead of 40", ((cast(*void)(*instance.dispchar)) - cast(*void)(*instance)));
-    assert(size_of(type_of(_PQconninfoOption.dispchar)) == 8, "_PQconninfoOption.dispchar has unexpected size % instead of 8", size_of(type_of(_PQconninfoOption.dispchar)));
-    assert(((cast(*void)(*instance.dispsize)) - cast(*void)(*instance)) == 48, "_PQconninfoOption.dispsize has unexpected offset % instead of 48", ((cast(*void)(*instance.dispsize)) - cast(*void)(*instance)));
-    assert(size_of(type_of(_PQconninfoOption.dispsize)) == 4, "_PQconninfoOption.dispsize has unexpected size % instead of 4", size_of(type_of(_PQconninfoOption.dispsize)));
-    assert(size_of(_PQconninfoOption) == 56, "_PQconninfoOption has size % instead of 56", size_of(_PQconninfoOption));
-}
 
 /* ----------------
 * Structure for the conninfo parameter definitions returned by PQconndefaults
@@ -294,16 +216,6 @@ PQArgBlock :: struct {
         integer: s32;
     };
 }
-#run {
-    instance: PQArgBlock;
-    assert(((cast(*void)(*instance.len)) - cast(*void)(*instance)) == 0, "PQArgBlock.len has unexpected offset % instead of 0", ((cast(*void)(*instance.len)) - cast(*void)(*instance)));
-    assert(size_of(type_of(PQArgBlock.len)) == 4, "PQArgBlock.len has unexpected size % instead of 4", size_of(type_of(PQArgBlock.len)));
-    assert(((cast(*void)(*instance.isint)) - cast(*void)(*instance)) == 4, "PQArgBlock.isint has unexpected offset % instead of 4", ((cast(*void)(*instance.isint)) - cast(*void)(*instance)));
-    assert(size_of(type_of(PQArgBlock.isint)) == 4, "PQArgBlock.isint has unexpected size % instead of 4", size_of(type_of(PQArgBlock.isint)));
-    assert(((cast(*void)(*instance.u)) - cast(*void)(*instance)) == 8, "PQArgBlock.u has unexpected offset % instead of 8", ((cast(*void)(*instance.u)) - cast(*void)(*instance)));
-    assert(size_of(type_of(PQArgBlock.u)) == 8, "PQArgBlock.u has unexpected size % instead of 8", size_of(type_of(PQArgBlock.u)));
-    assert(size_of(PQArgBlock) == 16, "PQArgBlock has size % instead of 16", size_of(PQArgBlock));
-}
 
 /* ----------------
 * PGresAttDesc -- Data about a single attribute (column) of a query result
@@ -317,24 +229,6 @@ pgresAttDesc :: struct {
     typid:     Oid; /* type id */
     typlen:    s32; /* type size */
     atttypmod: s32; /* type-specific modifier info */
-}
-#run {
-    instance: pgresAttDesc;
-    assert(((cast(*void)(*instance.name)) - cast(*void)(*instance)) == 0, "pgresAttDesc.name has unexpected offset % instead of 0", ((cast(*void)(*instance.name)) - cast(*void)(*instance)));
-    assert(size_of(type_of(pgresAttDesc.name)) == 8, "pgresAttDesc.name has unexpected size % instead of 8", size_of(type_of(pgresAttDesc.name)));
-    assert(((cast(*void)(*instance.tableid)) - cast(*void)(*instance)) == 8, "pgresAttDesc.tableid has unexpected offset % instead of 8", ((cast(*void)(*instance.tableid)) - cast(*void)(*instance)));
-    assert(size_of(type_of(pgresAttDesc.tableid)) == 4, "pgresAttDesc.tableid has unexpected size % instead of 4", size_of(type_of(pgresAttDesc.tableid)));
-    assert(((cast(*void)(*instance.columnid)) - cast(*void)(*instance)) == 12, "pgresAttDesc.columnid has unexpected offset % instead of 12", ((cast(*void)(*instance.columnid)) - cast(*void)(*instance)));
-    assert(size_of(type_of(pgresAttDesc.columnid)) == 4, "pgresAttDesc.columnid has unexpected size % instead of 4", size_of(type_of(pgresAttDesc.columnid)));
-    assert(((cast(*void)(*instance.format)) - cast(*void)(*instance)) == 16, "pgresAttDesc.format has unexpected offset % instead of 16", ((cast(*void)(*instance.format)) - cast(*void)(*instance)));
-    assert(size_of(type_of(pgresAttDesc.format)) == 4, "pgresAttDesc.format has unexpected size % instead of 4", size_of(type_of(pgresAttDesc.format)));
-    assert(((cast(*void)(*instance.typid)) - cast(*void)(*instance)) == 20, "pgresAttDesc.typid has unexpected offset % instead of 20", ((cast(*void)(*instance.typid)) - cast(*void)(*instance)));
-    assert(size_of(type_of(pgresAttDesc.typid)) == 4, "pgresAttDesc.typid has unexpected size % instead of 4", size_of(type_of(pgresAttDesc.typid)));
-    assert(((cast(*void)(*instance.typlen)) - cast(*void)(*instance)) == 24, "pgresAttDesc.typlen has unexpected offset % instead of 24", ((cast(*void)(*instance.typlen)) - cast(*void)(*instance)));
-    assert(size_of(type_of(pgresAttDesc.typlen)) == 4, "pgresAttDesc.typlen has unexpected size % instead of 4", size_of(type_of(pgresAttDesc.typlen)));
-    assert(((cast(*void)(*instance.atttypmod)) - cast(*void)(*instance)) == 28, "pgresAttDesc.atttypmod has unexpected offset % instead of 28", ((cast(*void)(*instance.atttypmod)) - cast(*void)(*instance)));
-    assert(size_of(type_of(pgresAttDesc.atttypmod)) == 4, "pgresAttDesc.atttypmod has unexpected size % instead of 4", size_of(type_of(pgresAttDesc.atttypmod)));
-    assert(size_of(pgresAttDesc) == 32, "pgresAttDesc has size % instead of 32", size_of(pgresAttDesc));
 }
 
 /* ----------------
@@ -372,7 +266,7 @@ PQconninfo :: (conn: *PGconn) -> *PQconninfoOption #foreign libpq;
 PQconninfoFree :: (connOptions: *PQconninfoOption) -> void #foreign libpq;
 
 /*
-* close the current connection and reestablish a new one with the same
+* close the current connection and restablish a new one with the same
 * parameters
 */
 /* Asynchronous (non-blocking) */
@@ -399,7 +293,6 @@ PQdb :: (conn: *PGconn) -> *u8 #foreign libpq;
 PQuser :: (conn: *PGconn) -> *u8 #foreign libpq;
 PQpass :: (conn: *PGconn) -> *u8 #foreign libpq;
 PQhost :: (conn: *PGconn) -> *u8 #foreign libpq;
-PQhostaddr :: (conn: *PGconn) -> *u8 #foreign libpq;
 PQport :: (conn: *PGconn) -> *u8 #foreign libpq;
 PQtty :: (conn: *PGconn) -> *u8 #foreign libpq;
 PQoptions :: (conn: *PGconn) -> *u8 #foreign libpq;
@@ -412,7 +305,6 @@ PQserverVersion :: (conn: *PGconn) -> s32 #foreign libpq;
 PQerrorMessage :: (conn: *PGconn) -> *u8 #foreign libpq;
 PQsocket :: (conn: *PGconn) -> s32 #foreign libpq;
 PQbackendPID :: (conn: *PGconn) -> s32 #foreign libpq;
-PQpipelineStatus :: (conn: *PGconn) -> PGpipelineStatus #foreign libpq;
 PQconnectionNeedsPassword :: (conn: *PGconn) -> s32 #foreign libpq;
 PQconnectionUsedPassword :: (conn: *PGconn) -> s32 #foreign libpq;
 PQclientEncoding :: (conn: *PGconn) -> s32 #foreign libpq;
@@ -434,17 +326,15 @@ PQinitSSL :: (do_init: s32) -> void #foreign libpq;
 /* More detailed way to tell libpq whether it needs to initialize OpenSSL */
 PQinitOpenSSL :: (do_ssl: s32, do_crypto: s32) -> void #foreign libpq;
 
-/* Return true if GSSAPI encryption is in use */
-PQgssEncInUse :: (conn: *PGconn) -> s32 #foreign libpq;
-
-/* Returns GSSAPI context if GSSAPI is in use */
-PQgetgssctx :: (conn: *PGconn) -> *void #foreign libpq;
-
 /* Set verbosity for PQerrorMessage and PQresultErrorMessage */
 PQsetErrorVerbosity :: (conn: *PGconn, verbosity: PGVerbosity) -> PGVerbosity #foreign libpq;
 
 /* Set CONTEXT visibility for PQerrorMessage and PQresultErrorMessage */
 PQsetErrorContextVisibility :: (conn: *PGconn, show_context: PGContextVisibility) -> PGContextVisibility #foreign libpq;
+
+/* Enable/disable tracing */
+PQtrace :: (conn: *PGconn, debug_port: *FILE) -> void #foreign libpq;
+PQuntrace :: (conn: *PGconn) -> void #foreign libpq;
 
 /* Override default notice handling routines */
 PQsetNoticeReceiver :: (conn: *PGconn, proc: PQnoticeReceiver, arg: *void) -> PQnoticeReceiver #foreign libpq;
@@ -462,12 +352,6 @@ pgthreadlock_t :: #type (acquire: s32) -> void #c_call;
 
 PQregisterThreadLock :: (newhandler: pgthreadlock_t) -> pgthreadlock_t #foreign libpq;
 
-/* === in fe-trace.c === */
-PQtrace :: (conn: *PGconn, debug_port: *FILE) -> void #foreign libpq;
-PQuntrace :: (conn: *PGconn) -> void #foreign libpq;
-
-PQsetTraceFlags :: (conn: *PGconn, flags: s32) -> void #foreign libpq;
-
 /* Simple synchronous query */
 PQexec :: (conn: *PGconn, query: *u8) -> *PGresult #foreign libpq;
 PQexecParams :: (conn: *PGconn, command: *u8, nParams: s32, paramTypes: *Oid, paramValues: **u8, paramLengths: *s32, paramFormats: *s32, resultFormat: s32) -> *PGresult #foreign libpq;
@@ -476,6 +360,7 @@ PQprepare :: (conn: *PGconn, stmtName: *u8, query: *u8, nParams: s32, paramTypes
 
 PQexecPrepared :: (conn: *PGconn, stmtName: *u8, nParams: s32, paramValues: **u8, paramLengths: *s32, paramFormats: *s32, resultFormat: s32) -> *PGresult #foreign libpq;
 
+/* Interface for multiple-result or asynchronous queries */
 PQsendQuery :: (conn: *PGconn, query: *u8) -> s32 #foreign libpq;
 PQsendQueryParams :: (conn: *PGconn, command: *u8, nParams: s32, paramTypes: *Oid, paramValues: **u8, paramLengths: *s32, paramFormats: *s32, resultFormat: s32) -> s32 #foreign libpq;
 
@@ -489,12 +374,6 @@ PQgetResult :: (conn: *PGconn) -> *PGresult #foreign libpq;
 /* Routines for managing an asynchronous query */
 PQisBusy :: (conn: *PGconn) -> s32 #foreign libpq;
 PQconsumeInput :: (conn: *PGconn) -> s32 #foreign libpq;
-
-/* Routines for pipeline mode management */
-PQenterPipelineMode :: (conn: *PGconn) -> s32 #foreign libpq;
-PQexitPipelineMode :: (conn: *PGconn) -> s32 #foreign libpq;
-PQpipelineSync :: (conn: *PGconn) -> s32 #foreign libpq;
-PQsendFlushRequest :: (conn: *PGconn) -> s32 #foreign libpq;
 
 /* LISTEN/NOTIFY support */
 PQnotifies :: (conn: *PGconn) -> *PGnotify #foreign libpq;
@@ -572,7 +451,6 @@ PQmakeEmptyPGresult :: (conn: *PGconn, status: ExecStatusType) -> *PGresult #for
 PQcopyResult :: (src: *PGresult, flags: s32) -> *PGresult #foreign libpq;
 PQsetResultAttrs :: (res: *PGresult, numAttributes: s32, attDescs: *PGresAttDesc) -> s32 #foreign libpq;
 PQresultAlloc :: (res: *PGresult, nBytes: size_t) -> *void #foreign libpq;
-PQresultMemorySize :: (res: *PGresult) -> size_t #foreign libpq;
 PQsetvalue :: (res: *PGresult, tup_num: s32, field_num: s32, value: *u8, len: s32) -> s32 #foreign libpq;
 
 /* Quoting strings before inclusion in queries. */
@@ -596,7 +474,7 @@ PQprint :: (fout: *FILE, res: *PGresult, ps: *PQprintOpt) -> void #foreign libpq
 */
 PQdisplayTuples :: (res: *PGresult, fp: *FILE, fillAlign: s32, fieldSep: *u8, printHeader: s32, quiet: s32) -> void #foreign libpq;
 
-PQprintTuples :: (res: *PGresult, fout: *FILE, PrintAttNames: s32, TerseOutput: s32, colWidth: s32) -> void #foreign libpq;
+PQprintTuples :: (res: *PGresult, fout: *FILE, printAttName: s32, terseOutput: s32, width: s32) -> void #foreign libpq;
 
 /* Large-object access routines */
 lo_open :: (conn: *PGconn, lobjId: Oid, mode: s32) -> s32 #foreign libpq;
@@ -622,9 +500,6 @@ PQlibVersion :: () -> s32 #foreign libpq;
 /* Determine length of multibyte encoded char at *s */
 PQmblen :: (s: *u8, encoding: s32) -> s32 #foreign libpq;
 
-/* Same, but not more than the distance to the end of string s */
-PQmblenBounded :: (s: *u8, encoding: s32) -> s32 #foreign libpq;
-
 /* Determine display length of multibyte encoded char at *s */
 PQdsplen :: (s: *u8, encoding: s32) -> s32 #foreign libpq;
 
@@ -640,15 +515,8 @@ pg_char_to_encoding :: (name: *u8) -> s32 #foreign libpq;
 pg_encoding_to_char :: (encoding: s32) -> *u8 #foreign libpq;
 pg_valid_server_encoding_id :: (encoding: s32) -> s32 #foreign libpq;
 
-/* Support for overriding sslpassword handling with a callback */
-PQsslKeyPassHook_OpenSSL_type :: #type (buf: *u8, size: s32, conn: *PGconn) -> s32 #c_call;
-PQgetSSLKeyPassHook_OpenSSL :: () -> PQsslKeyPassHook_OpenSSL_type #foreign libpq;
-PQsetSSLKeyPassHook_OpenSSL :: (hook: PQsslKeyPassHook_OpenSSL_type) -> void #foreign libpq;
-PQdefaultSSLKeyPassHook_OpenSSL :: (buf: *u8, size: s32, conn: *PGconn) -> s32 #foreign libpq;
-
 #scope_file
 
-#import "Basic"; // For assert
 
 libpq :: #system_library "libpq";
 
