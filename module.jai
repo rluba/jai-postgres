@@ -554,7 +554,8 @@ str_from_numeric :: (data: *u8, len: int, row: int, col: int) -> string, success
 #load "pq_types.jai";
 
 #if OS == .WINDOWS {
-    #load "bindings/windows.jai";
+    #assert(false); // No Windows bindings yet
+    // #load "bindings/windows.jai";
 } else {
     #import "POSIX";
     #load "bindings/unix.jai";
