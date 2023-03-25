@@ -1,5 +1,6 @@
 AT_COMPILE_TIME :: true;
 
+WINDOWS_PG_DIR :: "C:/Program Files/PostgreSQL/15";
 IMGUI_PATH :: "src/imgui-1.85";
 
 DECLARATIONS_TO_OMIT :: string.[
@@ -33,6 +34,11 @@ generate_bindings :: () -> bool {
 
         #if OS == .WINDOWS {
             output_filename          = "bindings/windows.jai";
+            array_add(*include_paths, tprint("%/%", WINDOWS_PG_DIR, "include"));
+            array_add(*libpaths,      tprint("%/%", WINDOWS_PG_DIR, "bin"));
+            array_add(*libpaths,      tprint("%/%", WINDOWS_PG_DIR, "lib"));
+            generate_library_declarations = false;
+            footer = FOOTER_WIN;
         } else #if OS == .LINUX {
             output_filename          = "bindings/unix.jai";
 			array_add(*include_paths, "/usr/include/postgresql");
@@ -164,5 +170,11 @@ generate_bindings :: () -> bool {
 FOOTER_UNIX :: #string END
 
 libpq :: #system_library "libpq";
+
+END
+
+FOOTER_WIN :: #string END
+
+libpq :: #library,no_dll "libpq";
 
 END
