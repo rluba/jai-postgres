@@ -189,7 +189,14 @@ check_query_result :: (query_res: *PGresult) -> has_results: bool, success: bool
 
 get_results :: (query_res: *PGresult, $T: Type, $ignore_unknown := false) -> [] T, success: bool {
     raw_result, success := get_results(query_res, type_info(T), ignore_unknown);
-    return xx raw_result, success;
+    results: []T;
+
+    #if OS == .WINDOWS {
+        results.data = xx raw_result.data;
+        results.count = raw_result.count * size_of(u8) / size_of(T);
+        return results, success;
+    } else 
+        return xx raw_result, success;
 }
 
 get_results :: (query_res: *PGresult, info: *Type_Info, ignore_unknown := false) -> Array_View_64, success: bool {
@@ -300,7 +307,13 @@ assign_member :: (name: string, info: *Type_Info, slot: *u8, col_type: Pq_Type, 
             }
 
             val := << cast(*u8) data;
-            << (cast(*bool) slot) = (val != 0);
+
+            #if OS == .WINDOWS {
+                << (cast(*bool) slot) = (val == #char"t");
+            } else {
+                << (cast(*bool) slot) = (val != 0);
+            }
+
             return true;
 
         case .CHAR; #through;
@@ -318,11 +331,21 @@ assign_member :: (name: string, info: *Type_Info, slot: *u8, col_type: Pq_Type, 
             // shift from 2000 to 1970
             val += 946_684_800_000000;
             if info.type == .STRING {
+            #if OS == .WINDOWS {
+                APOLLO_TIME_FOR_JAN_1_1970 :: Apollo_Time.{low=0xdbd87f0edb7c8000, high=0x300};
+                a_seconds     :=     seconds_to_apollo(val / 1_000_000);
+                a_nanoseconds := nanoseconds_to_apollo((val % 1_000_000) * 1000);
+
+                apollo := a_seconds + a_nanoseconds + APOLLO_TIME_FOR_JAN_1_1970;
+
+                calendar := to_calendar(apollo);
+            } else {
                 ts: timespec;
                 ts.tv_sec = val / 1_000_000;
                 ts.tv_nsec = (val % 1_000_000) * 1000;
                 apollo := timespec_to_apollo(ts);
                 calendar := to_calendar(apollo);
+            }
                 iso := calendar_to_iso_string(calendar);
                 return write_string_value(col, name, info, slot, col_type, iso, is_custom = false);
             } else {
@@ -554,8 +577,10 @@ str_from_numeric :: (data: *u8, len: int, row: int, col: int) -> string, success
 #load "pq_types.jai";
 
 #if OS == .WINDOWS {
-    #assert(false); // No Windows bindings yet
-    // #load "bindings/windows.jai";
+    Windows :: #import "Windows";    
+    #load "bindings/windows.jai";
+    size_t :: Windows.size_t;
+    FILE :: *void;
 } else {
     #import "POSIX";
     #load "bindings/unix.jai";
