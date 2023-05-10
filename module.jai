@@ -195,8 +195,11 @@ get_results :: (query_res: *PGresult, $T: Type, $ignore_unknown := false) -> [] 
         results.data = xx raw_result.data;
         results.count = raw_result.count * size_of(u8) / size_of(T);
         return results, success;
-    } else 
-        return xx raw_result, success;
+    } else {
+        results.data = xx raw_result.data;
+        results.count = raw_result.count;
+        return results, success;
+    }
 }
 
 get_results :: (query_res: *PGresult, info: *Type_Info, ignore_unknown := false) -> Array_View_64, success: bool {
