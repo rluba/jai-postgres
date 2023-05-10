@@ -322,6 +322,7 @@ assign_member :: (name: string, info: *Type_Info, slot: *u8, col_type: Pq_Type, 
         case .CHAR; #through;
         case .BPCHAR; #through;
         case .VARCHAR; #through;
+        case .NAME; #through;
         case .TEXT;
             val: string;
             val.data = data;

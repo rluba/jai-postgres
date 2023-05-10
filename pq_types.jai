@@ -12,6 +12,7 @@ Pq_Type :: enum Oid {
 	BOOL            :: 16;
 	BYTEA           :: 17;
 	CHAR            :: 18;
+        NAME            :: 19;
 	INT8            :: 20;
 	INT2            :: 21;
 	INT4            :: 23;
