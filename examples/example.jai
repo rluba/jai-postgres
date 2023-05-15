@@ -1,10 +1,3 @@
-#run {
-    #import "Compiler";
-    if OS == .MACOS {
-        compiler_add_library_search_directory("/usr/local/homebrew/opt/libpq/lib");
-    }
-}
-
 main :: () {
     args := get_command_line_arguments();
     if args.count != 2 {
@@ -35,18 +28,18 @@ main :: () {
     assert(results.count == 1);
 
     result := results[0];
-    assert(result.int2 == 1);
-    assert(result.int4 == 2);
-    assert(result.int8 == 3);
-    assert(result.float8 == 2.5);
-    assert(result.numeric == "3.50");
-    assert(result.boolean == true);
-    assert(result.char == "a  ");
-    assert(result.bpchar == "b");
-    assert(result.varchar == "c");
-    assert(result.name == "d");
-    assert(result.text == "e");
-    assert(result.timestamp == "2023-05-15T00:00:00.000Z");
+    assert(result.int2        == 1);
+    assert(result.int4        == 2);
+    assert(result.int8        == 3);
+    assert(result.float8      == 2.5);
+    assert(result.numeric     == "3.50");
+    assert(result.boolean     == true);
+    assert(result.char        == "a  ");
+    assert(result.bpchar      == "b");
+    assert(result.varchar     == "c");
+    assert(result.name        == "d");
+    assert(result.text        == "e");
+    assert(result.timestamp   == "2023-05-15T00:00:00.000Z");
     assert(result.timestamptz == 1684022400000000);
     log("ALL OK");
 }
