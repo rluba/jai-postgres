@@ -67,8 +67,9 @@ Using a Pool allocator around your `execute` calls might be a good idea.
 ## Supported return value column types
 
 * `INT2`, `INT4`, `INT8`
+* `FLOAT8`
 * `NUMERIC`
 * `BOOL`
-* `CHAR`, `BPCHAR`, `VARCHAR`, `TEXT`
+* `CHAR`, `BPCHAR`, `VARCHAR`, `NAME`, `TEXT`
 * `TIMESTAMP`, `TIMESTAMPTZ`
 * Custom enum types (`CREATE TYPE … AS ENUM`), which can parsed into string or enum member fields.
