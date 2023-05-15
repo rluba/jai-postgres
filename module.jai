@@ -291,11 +291,12 @@ assign_member :: (name: string, info: *Type_Info, slot: *u8, col_type: Pq_Type, 
 
         case .NUMERIC;
             if info.type != Type_Info_Tag.STRING {
-                log_error("Error: Trying to write numeric column % into member field \"%\" of type %", col, name, info.type);
+                log_error("Error: Trying to write numeric column % into member field \"%\" of type %, but we only support writing to string fields at the moment.", col, name, info.type);
                 return false;
             }
-            << (cast(*string) slot) = str_from_numeric(data, len, row, col);
-            return true;
+            success: bool;
+            << (cast(*string) slot), success = str_from_numeric(data, len, row, col);
+            return success;
 
         case .BOOL;
             assert(len == 1);
@@ -330,21 +331,21 @@ assign_member :: (name: string, info: *Type_Info, slot: *u8, col_type: Pq_Type, 
             // shift from 2000 to 1970
             val += 946_684_800_000000;
             if info.type == .STRING {
-            #if OS == .WINDOWS {
-                APOLLO_TIME_FOR_JAN_1_1970 :: Apollo_Time.{low=0xdbd87f0edb7c8000, high=0x300};
-                a_seconds     :=     seconds_to_apollo(val / 1_000_000);
-                a_nanoseconds := nanoseconds_to_apollo((val % 1_000_000) * 1000);
+                #if OS == .WINDOWS {
+                    APOLLO_TIME_FOR_JAN_1_1970 :: Apollo_Time.{low=0xdbd87f0edb7c8000, high=0x300};
+                    a_seconds     :=     seconds_to_apollo(val / 1_000_000);
+                    a_nanoseconds := nanoseconds_to_apollo((val % 1_000_000) * 1000);
 
-                apollo := a_seconds + a_nanoseconds + APOLLO_TIME_FOR_JAN_1_1970;
+                    apollo := a_seconds + a_nanoseconds + APOLLO_TIME_FOR_JAN_1_1970;
 
-                calendar := to_calendar(apollo);
-            } else {
-                ts: timespec;
-                ts.tv_sec = val / 1_000_000;
-                ts.tv_nsec = (val % 1_000_000) * 1000;
-                apollo := timespec_to_apollo(ts);
-                calendar := to_calendar(apollo);
-            }
+                    calendar := to_calendar(apollo);
+                } else {
+                    ts: timespec;
+                    ts.tv_sec = val / 1_000_000;
+                    ts.tv_nsec = (val % 1_000_000) * 1000;
+                    apollo := timespec_to_apollo(ts);
+                    calendar := to_calendar(apollo);
+                }
                 iso := calendar_to_iso_string(calendar);
                 return write_string_value(col, name, info, slot, col_type, iso, is_custom = false);
             } else {
@@ -576,7 +577,7 @@ str_from_numeric :: (data: *u8, len: int, row: int, col: int) -> string, success
 #load "pq_types.jai";
 
 #if OS == .WINDOWS {
-    Windows :: #import "Windows";    
+    Windows :: #import "Windows";
     #load "bindings/windows.jai";
     size_t :: Windows.size_t;
     FILE :: *void;
