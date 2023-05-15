@@ -137,11 +137,7 @@ send_query :: (conn: *PGconn, command: string, args: .. Any) -> success: bool {
     c_command := to_c_string(command);
 
     result: int;
-    if args.count == 0 {
-        result = PQsendQuery(conn, c_command);
-    } else {
-        result = PQsendQueryParams(conn, c_command, cast(s32) args.count, param_types.data, param_values.data, param_lengths.data, param_formats.data, 1);
-    }
+    result = PQsendQueryParams(conn, c_command, cast(s32) args.count, param_types.data, param_values.data, param_lengths.data, param_formats.data, 1);
     if result == 0 {
         error_message: string;
         error_message.data = PQerrorMessage(conn);
