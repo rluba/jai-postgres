@@ -422,6 +422,21 @@ write_integer :: (col: int, name: string, info: *Type_Info, pointer: *void, col_
 }
 
 range_check_and_store :: (value: $T, info: *Type_Info_Integer, pointer: *void) -> (success: bool, low: T, high: T) {
+    store :: (pointer: *void, value: T, size: int) {
+        if size == {
+            case 1;
+                << cast(*s8)  pointer = xx,no_check value;
+            case 2;
+                << cast(*s16) pointer = xx,no_check value;
+            case 4;
+                << cast(*s32) pointer = xx,no_check value;
+            case 8;
+                << cast(*s64) pointer = xx,no_check value;
+            case;
+            assert(false);
+        }
+    }
+
     #assert((T == u64) || (T == s64));
 
     size := info.runtime_size;
@@ -438,21 +453,6 @@ range_check_and_store :: (value: $T, info: *Type_Info_Integer, pointer: *void) -
 
         store(pointer, value, size);
         return true, low, high;
-    }
-
-    store :: (pointer: *void, value: T, size: int) {
-        if size == {
-            case 1;
-                << cast(*s8)  pointer = xx,no_check value;
-            case 2;
-                << cast(*s16) pointer = xx,no_check value;
-            case 4;
-                << cast(*s32) pointer = xx,no_check value;
-            case 8;
-                << cast(*s64) pointer = xx,no_check value;
-            case;
-            assert(false);
-        }
     }
 }
 
