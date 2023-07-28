@@ -172,10 +172,12 @@ check_query_result :: (query_res: *PGresult) -> has_results: bool, success: bool
         case ExecStatusType.PGRES_TUPLES_OK;
             return true, true;
         case ExecStatusType.PGRES_FATAL_ERROR;
-            error_message: string;
-            error_message.data = PQresultErrorMessage(query_res);
-            error_message.count = c_style_strlen(error_message.data);
+            error_message := to_string(PQresultErrorMessage(query_res));
             log_error("Fatal error: %", error_message);
+            return false, false;
+        case ExecStatusType.PGRES_NONFATAL_ERROR;
+            error_message := to_string(PQresultErrorMessage(query_res));
+            log_error("Non-fatal error: %", error_message);
             return false, false;
         case;
             log_error("Query result status: %", res_status);
