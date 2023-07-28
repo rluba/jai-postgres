@@ -322,7 +322,8 @@ assign_member :: (name: string, info: *Type_Info, slot: *u8, col_type: Pq_Type, 
             write_string_value(col, name, info, slot, col_type, val, is_custom = false);
             return true;
 
-        case .TIMESTAMP;
+        case .TIMESTAMP;   #through;
+        case .TIMESTAMPTZ;
             val := ntoh(<< cast(*s64) data);
             // shift from 2000 to 1970
             val += 946_684_800_000000;
@@ -345,16 +346,8 @@ assign_member :: (name: string, info: *Type_Info, slot: *u8, col_type: Pq_Type, 
                 iso := calendar_to_iso_string(calendar);
                 return write_string_value(col, name, info, slot, col_type, iso, is_custom = false);
             } else {
-                // @ToDO, @Incomplete: Support a special structure that keeps track of is_utc flag?
                 return write_integer(col, name, info, slot, col_type, val);
             }
-
-        case .TIMESTAMPTZ;
-            val := ntoh(<< cast(*s64) data);
-            // shift from 2000 to 1970
-            val += 946_684_800_000000;
-            // @ToDO, @Incomplete: Support a special structure that keeps track of is_utc flag?
-            return write_integer(col, name, info, slot, col_type, val);
 
         case;
             if cast(s64) col_type > enum_highest_value(Pq_Type) {

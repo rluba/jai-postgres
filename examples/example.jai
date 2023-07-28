@@ -18,7 +18,8 @@ main :: () {
             2.5::float8, 3.5::numeric(8, 2),
             true "boolean",
             'a'::char(3) "char", 'b'::bpchar "bpchar", 'c'::varchar, 'd'::name, 'e'::text,
-            '2023-05-15'::timestamp, '2023-05-14'::timestamptz
+            '2023-05-15'::timestamp, '2023-05-14'::timestamptz,
+            '2023-05-15T14:30:00'::timestamp time_wo_tz, '2023-05-15T14:30:00 Europe/Vienna'::timestamptz time_with_tz, '2023-05-15T14:30:00 UTC'::timestamptz time_utc
     END
 
     results: [] Test;
@@ -41,23 +42,27 @@ main :: () {
     assert(result.text        == "e");
     assert(result.timestamp   == "2023-05-15T00:00:00.000Z");
     assert(result.timestamptz == 1684022400000000);
+    log("% vs % vs %", result.time_wo_tz, result.time_with_tz, result.time_utc);
     log("ALL OK");
 }
 
 Test :: struct {
-    int2:   int;
-    int4:   int;
-    int8:   s64;
-    float8: float64;
-    numeric: string;
-    boolean: bool;
-    char: string;
-    bpchar: string;
-    varchar: string;
-    name: string;
-    text: string;
-    timestamp: string;
-    timestamptz: s64;
+    int2:         int;
+    int4:         int;
+    int8:         s64;
+    float8:       float64;
+    numeric:      string;
+    boolean:      bool;
+    char:         string;
+    bpchar:       string;
+    varchar:      string;
+    name:         string;
+    text:         string;
+    timestamp:    string;
+    timestamptz:  s64;
+    time_wo_tz:   s64;
+    time_with_tz: s64;
+    time_utc: s64;
 }
 
 #import,file "../module.jai";
