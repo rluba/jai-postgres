@@ -76,7 +76,7 @@ send_query :: (conn: *PGconn, command: string, args: .. Any) -> success: bool {
 
     for arg, index: args {
         if arg.type.type == {
-            case Type_Info_Tag.INTEGER;
+            case .INTEGER;
                 info := cast(*Type_Info_Integer) arg.type;
                 // @ToDo: implement unsigned ints
                 assert(info.signed, "Unsigned not yet supported");
@@ -101,7 +101,7 @@ send_query :: (conn: *PGconn, command: string, args: .. Any) -> success: bool {
                 param_lengths[index] = cast(s32) info.runtime_size;
                 param_formats[index] = 1;
 
-            case Type_Info_Tag.FLOAT;
+            case .FLOAT;
                 be_value := cast(*u8) alloc(arg.type.runtime_size);
                 if arg.type.runtime_size == 4 {
                     param_types[index] = cast(Oid) Pq_Type.FLOAT4;
@@ -117,15 +117,34 @@ send_query :: (conn: *PGconn, command: string, args: .. Any) -> success: bool {
                 param_lengths[index] = cast(s32) arg.type.runtime_size;
                 param_formats[index] = 1;
 
-            case Type_Info_Tag.STRING;
+            case .STRING;
                 str := cast(*string) arg.value_pointer;
                 param_types[index] = cast(Oid) Pq_Type.VARCHAR;
                 param_values[index] = str.data;
                 param_lengths[index] = cast(s32) str.count;
                 param_formats[index] = 1;
 
+
+            // case .ARRAY;
+                // @ToDo: Implement binary format according to array_recv format.
+                // See https://doxygen.postgresql.org/arrayfuncs_8c.html#a315b67e6e01e8f283326b5a6b27e07c9
+                //
+                // Format seems to be:
+                //   4 byte number of dimensions
+                //   4 byte flags (seems unused, but must be 0 or 1)
+                //   4 byte element type (sizeof OID, actually…)
+                // Then for each dimension:
+                //   4 byte number of elements
+                //   4 byte lower bound
+                // Then for each element:
+                //   4 byte length
+                //   n byte encoded element
+                //
+                // But given the overhead, maybe it would be smarter to just serialize arrays as strings?
+                // Eg. an array of two ints would be 28 bytes + 2 * int size.
+                // The string equivalent would be 3 bytes + string-size of the integers
+
             // ToDo: Struct as Jsonb?
-            // ToDo: Array?
 
             case;
                 // @ToDo: Implement
