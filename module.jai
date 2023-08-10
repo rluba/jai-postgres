@@ -219,6 +219,11 @@ get_results :: (query_res: *PGresult, $T: Type, $ignore_unknown := false) -> [] 
     }
 }
 
+Member_Offset :: struct {
+    member: *Type_Info_Struct_Member;
+    offset_in_bytes: s64;
+}
+
 get_results :: (query_res: *PGresult, info: *Type_Info, ignore_unknown := false) -> Array_View_64, success: bool {
     // @ToDo: Allow to cast single-column results directly to primitive types
     assert(info.type == .STRUCT);
@@ -234,19 +239,19 @@ get_results :: (query_res: *PGresult, info: *Type_Info, ignore_unknown := false)
     }
 
     num_columns := PQnfields(query_res);
-    column_members := NewArray(num_columns, *Type_Info_Struct_Member, initialized = false);
+    column_members := NewArray(num_columns, Member_Offset, initialized = false);
     defer array_free(column_members);
 
     for col: 0..num_columns - 1 {
         name: string;
         name.data = PQfname(query_res, col);
         name.count = c_style_strlen(name.data);
-        member := get_field(info_struct, name);
+        member, offset_in_bytes := get_field(info_struct, name);
         if !ignore_unknown && !member {
             log_error("Column \"%\" has no corresponding member in struct type \"%\"", name, <<info_struct);
             return results, false;
         }
-        column_members[col] = member;
+        column_members[col] = .{member, offset_in_bytes};
     }
 
     for row: 0..num_tuples - 1 {
@@ -254,8 +259,8 @@ get_results :: (query_res: *PGresult, info: *Type_Info, ignore_unknown := false)
         if initializer initializer(row_data);
 
         for col: 0..num_columns - 1 {
-            member := column_members[col];
-            if !member    continue;
+            member_offset := column_members[col];
+            if !member_offset.member    continue;
 
             if PQgetisnull(query_res, row, col) {
                 // @ToDo: Handle pointer member types and null them
@@ -264,8 +269,8 @@ get_results :: (query_res: *PGresult, info: *Type_Info, ignore_unknown := false)
                 type := PQftype(query_res, col);
                 len := PQgetlength(query_res, row, col);
                 data := PQgetvalue(query_res, row, col);
-                slot := row_data + member.offset_in_bytes;
-                success := assign_member(member.name, member.type, slot, cast(Pq_Type) type, len, data, row, col);
+                slot := row_data + member_offset.offset_in_bytes;
+                success := assign_member(member_offset.member.name, member_offset.member.type, slot, cast(Pq_Type) type, len, data, row, col);
                 if !success        return results, false;
             }
         }
