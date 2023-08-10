@@ -260,16 +260,20 @@ get_results :: (query_res: *PGresult, info: *Type_Info, ignore_unknown := false)
 assign_member :: (name: string, info: *Type_Info, slot: *u8, col_type: Pq_Type, len: int, data: *u8, row: int, col: int) -> bool {
     if col_type == {
         case .INT2;
+            assert(len == 2);
             // Explicitly throwing away 48 bits.
             val := ntoh(<< cast(*s16) data);
             return write_integer(col, name, info, slot, col_type, val);
 
+        case .OID; #through;
         case .INT4;
+            assert(len == 4);
             // Explicitly throwing away 32 bits.
             val := ntoh(<< cast(*s32) data);
             return write_integer(col, name, info, slot, col_type, val);
 
         case .INT8;
+            assert(len == 8);
             val := ntoh(<< cast(*s64) data);
             return write_integer(col, name, info, slot, col_type, val);
 

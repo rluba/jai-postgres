@@ -1,12 +1,4 @@
-// Adapted from node-pg-types (https://github.com/brianc/node-pg-types/blob/master/lib/binaryParsers.js)
-// From their doc:
- // Following query was used to generate this file:
- // SELECT json_object_agg(UPPER(PT.typname), PT.oid::int4 ORDER BY pt.oid)
- // FROM pg_type PT
- // WHERE typnamespace = (SELECT pgn.oid FROM pg_namespace pgn WHERE nspname = 'pg_catalog') -- Take only builting Postgres types with stable OID (extension types are not guaranted to be stable)
- // AND typtype = 'b' -- Only basic types
- // AND typelem = 0 -- Ignore aliases
- // AND typisdefined -- Ignore undefined types
+// Generated via "generate_types.jai"
 
 Pq_Type :: enum Oid {
     BOOL            :: 16;
@@ -15,6 +7,7 @@ Pq_Type :: enum Oid {
     NAME            :: 19;
     INT8            :: 20;
     INT2            :: 21;
+    INT2VECTOR      :: 22;
     INT4            :: 23;
     REGPROC         :: 24;
     TEXT            :: 25;
@@ -22,18 +15,19 @@ Pq_Type :: enum Oid {
     TID             :: 27;
     XID             :: 28;
     CID             :: 29;
+    OIDVECTOR       :: 30;
     JSON            :: 114;
     XML             :: 142;
     PG_NODE_TREE    :: 194;
-    SMGR            :: 210;
+    POINT           :: 600;
+    LSEG            :: 601;
     PATH            :: 602;
+    BOX             :: 603;
     POLYGON         :: 604;
+    LINE            :: 628;
     CIDR            :: 650;
     FLOAT4          :: 700;
     FLOAT8          :: 701;
-    ABSTIME         :: 702;
-    RELTIME         :: 703;
-    TINTERVAL       :: 704;
     CIRCLE          :: 718;
     MACADDR8        :: 774;
     MONEY           :: 790;
@@ -71,4 +65,8 @@ Pq_Type :: enum Oid {
     JSONPATH        :: 4072;
     REGNAMESPACE    :: 4089;
     REGROLE         :: 4096;
+    REGCOLLATION    :: 4191;
+    PG_MCV_LIST     :: 5017;
+    PG_SNAPSHOT     :: 5038;
+    XID8            :: 5069;
 }
