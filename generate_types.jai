@@ -61,6 +61,16 @@ generate_types :: (db_url: string) -> bool {
         }
         print_to_builder(*builder, ":: %;\n", it.oid);
     }
+    append(*builder, "}\n\n");
+    append(*builder, "Pq_Array_Type :: enum Oid {\n");
+    for type_list {
+        if it.typarray == 0 continue;
+        print_to_builder(*builder, "    %", it.typname);
+        for it.typname.count..max_len {
+            append(*builder, " ");
+        }
+        print_to_builder(*builder, ":: %;\n", it.typarray);
+    }
     append(*builder, "}\n");
 
     FILENAME :: "pq_types.jai";
