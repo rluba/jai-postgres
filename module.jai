@@ -1,3 +1,5 @@
+#module_parameters ()(SUPPORT_DATE_AS_STRINGS := false); // SUPPORT_DATE requires https://github.com/rluba/jai-date, at least for now.
+
 connect :: (conn_str: string) -> *PGconn, success: bool {
     conn_c_str := to_c_string(conn_str);
     defer free(conn_c_str);
@@ -352,6 +354,23 @@ assign_member :: (name: string, info: *Type_Info, slot: *u8, col_type: Pq_Type, 
             write_string_value(col, name, info, slot, col_type, val, is_custom = false);
             return true;
 
+        case .DATE;
+            assert(len == 4);
+            days_since_2000_01_01 := ntoh(<< cast(*s32) data);
+            if info.type == Type_Info_Tag.INTEGER {
+                return write_integer(col, name, info, slot, col_type, days_since_2000_01_01);
+            } else {
+                #if SUPPORT_DATE_AS_STRINGS {
+                    #import "date"; // https://github.com/rluba/jai-date
+                    date := Date.{2000, 1, 1};
+                    add(*date, days_since_2000_01_01, .DAY);
+                    date_string := string_from_date(date, .ISO);
+                    return write_string_value(col, name, info, slot, col_type, date_string, is_custom = false);
+                } else {
+                    log_error("Error: Trying to write column % of type % into member field \"%\" of type %", col, col_type, name, info.type);
+                    return false;
+                }
+            }
         case .TIMESTAMP;   #through;
         case .TIMESTAMPTZ;
             val := ntoh(<< cast(*s64) data);
