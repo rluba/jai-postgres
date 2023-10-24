@@ -364,8 +364,18 @@ assign_member :: (name: string, info: *Type_Info, slot: *u8, col_type: Pq_Type, 
                     #import "date"; // https://github.com/rluba/jai-date
                     date := Date.{2000, 1, 1};
                     add(*date, days_since_2000_01_01, .DAY);
-                    date_string := string_from_date(date, .ISO);
-                    return write_string_value(col, name, info, slot, col_type, date_string, is_custom = false);
+                    if info == type_info(Date) {
+                        target := cast(*Date) slot;
+                        <<target = date;
+                        return true;
+                    } else if info == type_info(Apollo_Time) {
+                        target := cast(*Apollo_Time) slot;
+                        <<target = to_apollo_time(date);
+                        return true;
+                    } else {
+                        date_string := string_from_date(date, .ISO);
+                        return write_string_value(col, name, info, slot, col_type, date_string, is_custom = false);
+                    }
                 } else {
                     log_error("Error: Trying to write column % of type % into member field \"%\" of type %", col, col_type, name, info.type);
                     return false;
@@ -376,24 +386,21 @@ assign_member :: (name: string, info: *Type_Info, slot: *u8, col_type: Pq_Type, 
             val := ntoh(<< cast(*s64) data);
             // shift from 2000 to 1970
             val += 946_684_800_000000;
-            if info.type == .STRING {
-                #if OS == .WINDOWS {
-                    APOLLO_TIME_FOR_JAN_1_1970 :: Apollo_Time.{low=0xdbd87f0edb7c8000, high=0x300};
-                    a_seconds     :=     seconds_to_apollo(val / 1_000_000);
-                    a_nanoseconds := nanoseconds_to_apollo((val % 1_000_000) * 1000);
+            if info.type == .STRING || info == type_info(Apollo_Time) {
+                a_seconds     :=     seconds_to_apollo(val / 1_000_000);
+                a_nanoseconds := nanoseconds_to_apollo((val % 1_000_000) * 1000);
 
-                    apollo := a_seconds + a_nanoseconds + APOLLO_TIME_FOR_JAN_1_1970;
+                apollo := a_seconds + a_nanoseconds + APOLLO_TIME_FOR_JAN_1_1970;
 
-                    calendar := to_calendar(apollo);
+                if info == type_info(Apollo_Time) {
+                    target := cast(*Apollo_Time) slot;
+                    <<target = apollo;
+                    return true;
                 } else {
-                    ts: timespec;
-                    ts.tv_sec = val / 1_000_000;
-                    ts.tv_nsec = (val % 1_000_000) * 1000;
-                    apollo := timespec_to_apollo(ts);
                     calendar := to_calendar(apollo);
+                    iso := calendar_to_iso_string(calendar);
+                    return write_string_value(col, name, info, slot, col_type, iso, is_custom = false);
                 }
-                iso := calendar_to_iso_string(calendar);
-                return write_string_value(col, name, info, slot, col_type, iso, is_custom = false);
             } else {
                 return write_integer(col, name, info, slot, col_type, val);
             }

@@ -20,7 +20,9 @@ main :: () {
             'a'::char(3) "char", 'b'::bpchar "bpchar", 'c'::varchar, 'd'::name, 'e'::text,
             '2023-05-15'::timestamp, '2023-05-14'::timestamptz,
             '2023-05-15T14:30:00'::timestamp time_wo_tz, '2023-05-15T14:30:00 Europe/Vienna'::timestamptz time_with_tz, '2023-05-15T14:30:00 UTC'::timestamptz time_utc,
+            '2023-05-15T14:30:00'::timestamp timestamp_apollo, -- Test writing timestamp into Apollo_Time
             '2023-10-24'::date real_date,
+            -- '2023-10-24'::date real_date_apollo,          -- Test writing date into Apollo_Time
             'Hello, Sailor!'::bytea sailor_bytes,         -- Test [] case
             'Hello, Sailor!'::bytea sailor_bytes_dynamic, -- Test [..] case
             'Hello, Sailor!'::bytea sailor_bytes_fixed    -- Test [n] case
@@ -46,10 +48,12 @@ main :: () {
     assert(result.text        == "e");
     assert(result.timestamp   == "2023-05-15T00:00:00.000Z");
     assert(result.timestamptz == 1684022400000000);
+    assert(calendar_to_iso_string(to_calendar(result.timestamp_apollo)) == "2023-05-15T14:30:00.000Z");
     assert(result.real_date   == 8697); // Days since 2000-01-01
-    assert(cast(string) result.sailor_bytes == "Hello, Sailor!");
+    // assert(calendar_to_iso_string(to_calendar(result.real_date_apollo)) == "2023-10-24T00:00:00.000Z");
+    assert(cast(string) result.sailor_bytes         == "Hello, Sailor!");
     assert(cast(string) result.sailor_bytes_dynamic == "Hello, Sailor!");
-    assert(cast(string) result.sailor_bytes_fixed == "Hello, Sailor!");
+    assert(cast(string) result.sailor_bytes_fixed   == "Hello, Sailor!");
     log("% vs % vs %", result.time_wo_tz, result.time_with_tz, result.time_utc);
     log("ALL OK");
 }
@@ -68,10 +72,12 @@ Test :: struct {
     text:                 string;
     timestamp:            string;
     timestamptz:          s64;
+    timestamp_apollo:     Apollo_Time;
     time_wo_tz:           s64;
     time_with_tz:         s64;
     time_utc:             s64;
     real_date:            s64;
+    // real_date_apollo:     Apollo_Time; // Only works with SUPPORT_DATE_AS_STRINGS
     sailor_bytes:         [] u8;
     sailor_bytes_dynamic: [..] u8;
     sailor_bytes_fixed:   [14] u8;
