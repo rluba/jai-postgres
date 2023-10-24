@@ -19,7 +19,11 @@ main :: () {
             true "boolean",
             'a'::char(3) "char", 'b'::bpchar "bpchar", 'c'::varchar, 'd'::name, 'e'::text,
             '2023-05-15'::timestamp, '2023-05-14'::timestamptz,
-            '2023-05-15T14:30:00'::timestamp time_wo_tz, '2023-05-15T14:30:00 Europe/Vienna'::timestamptz time_with_tz, '2023-05-15T14:30:00 UTC'::timestamptz time_utc
+            '2023-05-15T14:30:00'::timestamp time_wo_tz, '2023-05-15T14:30:00 Europe/Vienna'::timestamptz time_with_tz, '2023-05-15T14:30:00 UTC'::timestamptz time_utc,
+            '2023-10-24'::date real_date,
+            'Hello, Sailor!'::bytea sailor_bytes,         -- Test [] case
+            'Hello, Sailor!'::bytea sailor_bytes_dynamic, -- Test [..] case
+            'Hello, Sailor!'::bytea sailor_bytes_fixed    -- Test [n] case
     END
 
     results: [] Test;
@@ -42,27 +46,35 @@ main :: () {
     assert(result.text        == "e");
     assert(result.timestamp   == "2023-05-15T00:00:00.000Z");
     assert(result.timestamptz == 1684022400000000);
+    assert(result.real_date   == 8697); // Days since 2000-01-01
+    assert(cast(string) result.sailor_bytes == "Hello, Sailor!");
+    assert(cast(string) result.sailor_bytes_dynamic == "Hello, Sailor!");
+    assert(cast(string) result.sailor_bytes_fixed == "Hello, Sailor!");
     log("% vs % vs %", result.time_wo_tz, result.time_with_tz, result.time_utc);
     log("ALL OK");
 }
 
 Test :: struct {
-    int2:         int;
-    int4:         int;
-    int8:         s64;
-    float8:       float64;
-    numeric:      string;
-    boolean:      bool;
-    char:         string;
-    bpchar:       string;
-    varchar:      string;
-    name:         string;
-    text:         string;
-    timestamp:    string;
-    timestamptz:  s64;
-    time_wo_tz:   s64;
-    time_with_tz: s64;
-    time_utc: s64;
+    int2:                 int;
+    int4:                 int;
+    int8:                 s64;
+    float8:               float64;
+    numeric:              string;
+    boolean:              bool;
+    char:                 string;
+    bpchar:               string;
+    varchar:              string;
+    name:                 string;
+    text:                 string;
+    timestamp:            string;
+    timestamptz:          s64;
+    time_wo_tz:           s64;
+    time_with_tz:         s64;
+    time_utc:             s64;
+    real_date:            s64;
+    sailor_bytes:         [] u8;
+    sailor_bytes_dynamic: [..] u8;
+    sailor_bytes_fixed:   [14] u8;
 }
 
 #import,file "../module.jai";

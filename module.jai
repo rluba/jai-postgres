@@ -398,6 +398,42 @@ assign_member :: (name: string, info: *Type_Info, slot: *u8, col_type: Pq_Type, 
                 return write_integer(col, name, info, slot, col_type, val);
             }
 
+        case .BYTEA;
+            if info.type == .ARRAY {
+                array_info := cast(*Type_Info_Array) info;
+                element_size := array_info.element_type.runtime_size;
+                assert(element_size != -1);
+                if element_size != 1 {
+                    log_error("Error: Trying to write column % of type % with array count % into member field \"%\" with array element size of % instead of 1!", col, col_type, len, name, element_size);
+                    return false;
+                }
+
+                dest_data_pointer: *void;
+                if array_info.array_type == .VIEW {
+                    view := (cast(*Array_View_64) slot);
+                    view.count = len;
+                    view.data = alloc(len * element_size);
+                    dest_data_pointer = view.data;
+                } else if array_info.array_count == -1 {
+                    resizable_array := cast(*Resizable_Array) slot;
+                    array_reserve(resizable_array, len, element_size);
+                    resizable_array.count = len;
+                    dest_data_pointer = resizable_array.data;
+                } else {
+                    if array_info.array_count != len {
+                        log_error("Error: Trying to write column % of type % with array count % into member field \"%\", which is a fixed-size array with count %. For fixed-size arrays, the size must match!", col, col_type, len, name, array_info.array_count);
+                        return false;
+                    }
+                    dest_data_pointer = slot;
+                }
+
+                memcpy(dest_data_pointer, data, element_size * len);
+                return true;
+            } else {
+                log_error("Error: Trying to write column % of type % into member field \"%\" of type %", col, col_type, name, info.type);
+                return false;
+            }
+
         case;
             if cast(s64) col_type > enum_highest_value(Pq_Type) {
                 // Seems to be a custom type. Try to interpret it as a string
