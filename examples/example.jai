@@ -19,7 +19,7 @@ main :: () {
             true "boolean_true",
             false "boolean_false",
             'a'::char(3) "char", 'b'::bpchar "bpchar", 'c'::varchar, 'd'::name, 'e'::text,
-            '2023-05-15'::timestamp, '2023-05-14'::timestamptz,
+            '2023-05-15'::timestamp, '2023-05-14 UTC'::timestamptz,
             '2023-05-15T14:30:00'::timestamp time_wo_tz, '2023-05-15T14:30:00 Europe/Vienna'::timestamptz time_with_tz, '2023-05-15T14:30:00 UTC'::timestamptz time_utc,
             '2023-05-15T14:30:00'::timestamp timestamp_apollo, -- Test writing timestamp into Apollo_Time
             '2023-10-24'::date real_date,

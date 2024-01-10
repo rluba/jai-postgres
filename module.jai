@@ -208,17 +208,11 @@ check_query_result :: (query_res: *PGresult) -> has_results: bool, success: bool
 
 get_results :: (query_res: *PGresult, $T: Type, $ignore_unknown := false) -> [] T, success: bool {
     raw_result, success := get_results(query_res, type_info(T), ignore_unknown);
-    results: []T;
 
-    #if OS == .WINDOWS {
-        results.data = xx raw_result.data;
-        results.count = raw_result.count * size_of(u8) / size_of(T);
-        return results, success;
-    } else {
-        results.data = xx raw_result.data;
-        results.count = raw_result.count;
-        return results, success;
-    }
+    results: []T;
+    results.data = xx raw_result.data;
+    results.count = raw_result.count;
+    return results, success;
 }
 
 Member_Offset :: struct {
@@ -334,12 +328,7 @@ assign_member :: (name: string, info: *Type_Info, slot: *u8, col_type: Pq_Type, 
             }
 
             val := << cast(*u8) data;
-
-            #if OS == .WINDOWS {
-                << (cast(*bool) slot) = (val == #char"t");
-            } else {
-                << (cast(*bool) slot) = (val != 0);
-            }
+            << (cast(*bool) slot) = (val != 0);
 
             return true;
 
