@@ -16,7 +16,8 @@ main :: () {
         SELECT
             1::int2, 2::int4, 3::int8,
             2.5::float8, 3.5::numeric(8, 2),
-            true "boolean",
+            true "boolean_true",
+            false "boolean_false",
             'a'::char(3) "char", 'b'::bpchar "bpchar", 'c'::varchar, 'd'::name, 'e'::text,
             '2023-05-15'::timestamp, '2023-05-14'::timestamptz,
             '2023-05-15T14:30:00'::timestamp time_wo_tz, '2023-05-15T14:30:00 Europe/Vienna'::timestamptz time_with_tz, '2023-05-15T14:30:00 UTC'::timestamptz time_utc,
@@ -35,19 +36,20 @@ main :: () {
     assert(results.count == 1);
 
     result := results[0];
-    assert(result.int2        == 1);
-    assert(result.int4        == 2);
-    assert(result.int8        == 3);
-    assert(result.float8      == 2.5);
-    assert(result.numeric     == "3.50");
-    assert(result.boolean     == true);
-    assert(result.char        == "a  ");
-    assert(result.bpchar      == "b");
-    assert(result.varchar     == "c");
-    assert(result.name        == "d");
-    assert(result.text        == "e");
-    assert(result.timestamp   == "2023-05-15T00:00:00.000Z");
-    assert(result.timestamptz == 1684022400000000);
+    assert(result.int2          == 1);
+    assert(result.int4          == 2);
+    assert(result.int8          == 3);
+    assert(result.float8        == 2.5);
+    assert(result.numeric       == "3.50");
+    assert(result.boolean_true  == true);
+    assert(result.boolean_false == false);
+    assert(result.char          == "a  ");
+    assert(result.bpchar        == "b");
+    assert(result.varchar       == "c");
+    assert(result.name          == "d");
+    assert(result.text          == "e");
+    assert(result.timestamp     == "2023-05-15T00:00:00.000Z");
+    assert(result.timestamptz   == 1684022400000000);
     assert(calendar_to_iso_string(to_calendar(result.timestamp_apollo)) == "2023-05-15T14:30:00.000Z");
     assert(result.real_date   == 8697); // Days since 2000-01-01
     // assert(calendar_to_iso_string(to_calendar(result.real_date_apollo)) == "2023-10-24T00:00:00.000Z");
@@ -64,7 +66,8 @@ Test :: struct {
     int8:                 s64;
     float8:               float64;
     numeric:              string;
-    boolean:              bool;
+    boolean_true:         bool;
+    boolean_false:        bool;
     char:                 string;
     bpchar:               string;
     varchar:              string;
