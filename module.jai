@@ -40,8 +40,9 @@ execute :: (conn: *PGconn, $T: Type, command: string, args: .. Any, $ignore_unkn
     defer PQclear(query_res);
 
     has_results: bool;
+    update_rows: int;
     results: [] T;
-    has_results, success = check_query_result(query_res);
+    has_results, update_rows, success = check_query_result(query_res);
     if !success        return results, false;
 
     if has_results {
@@ -51,7 +52,7 @@ execute :: (conn: *PGconn, $T: Type, command: string, args: .. Any, $ignore_unkn
 }
 
 // Execute a statement without parsing the result (eg. for DELETE et al)
-execute :: (conn: *PGconn, command: string, args: .. Any) -> success: bool {
+execute :: (conn: *PGconn, command: string, args: .. Any) -> success: bool, update_rows: int {
     success := send_query(conn, command, ..args);
     if !success false;
 
@@ -59,9 +60,10 @@ execute :: (conn: *PGconn, command: string, args: .. Any) -> success: bool {
     defer PQclear(query_res);
 
     has_results: bool;
-    has_results, success = check_query_result(query_res);
+    update_rows: int;
+    has_results, update_rows, success = check_query_result(query_res);
 
-    return success;
+    return success, update_rows;
 }
 
 send_query :: (conn: *PGconn, command: string, args: .. Any) -> success: bool {
@@ -183,26 +185,29 @@ get_last_query_result :: (conn: *PGconn) -> *PGresult {
     return query_result;
 }
 
-check_query_result :: (query_res: *PGresult) -> has_results: bool, success: bool {
+check_query_result :: (query_res: *PGresult) -> has_results: bool, updated_rows: int, success: bool {
     res_status := PQresultStatus(query_res);
     if res_status == {
         case ExecStatusType.PGRES_EMPTY_QUERY;
-            return false, true;
+            return false, 0, true;
         case ExecStatusType.PGRES_COMMAND_OK;
-            return false, true;
+            rows_affected := to_string(PQcmdTuples(query_res));
+            rows_affected_count := parse_int(*rows_affected);
+
+            return false, rows_affected_count, true;
         case ExecStatusType.PGRES_TUPLES_OK;
-            return true, true;
+            return true, 0, true;
         case ExecStatusType.PGRES_FATAL_ERROR;
             error_message := to_string(PQresultErrorMessage(query_res));
             log_error("Fatal error: %", error_message);
-            return false, false;
+            return false, 0, false;
         case ExecStatusType.PGRES_NONFATAL_ERROR;
             error_message := to_string(PQresultErrorMessage(query_res));
             log_error("Non-fatal error: %", error_message);
-            return false, false;
+            return false, 0, false;
         case;
             log_error("Query result status: %", res_status);
-            return false, false;
+            return false, 0, false;
     }
 }
 
@@ -304,7 +309,7 @@ assign_member :: (name: string, info: *Type_Info, slot: *u8, col_type: Pq_Type, 
             }
 
             if info.runtime_size == 4 {
-                << (cast(*float32) slot) = ntoh(<<(cast(*float32) data));
+                << (cast(*float32) slot) = cast(float32) ntoh(<<(cast(*float64) data));
             } else {
                 assert(info.runtime_size == 8);
                 << (cast(*float64) slot) = ntoh(<<(cast(*float64) data));
@@ -586,7 +591,7 @@ str_from_numeric :: (data: *u8, len: int, row: int, col: int) -> string, success
 #import "Basic";
 #import "Pool";
 Reflection :: #import "Reflection";
-
+#import "String";
 
 #load "byte_order.jai";
 #load "pq_types.jai";
