@@ -301,9 +301,23 @@ assign_member :: (name: string, info: *Type_Info, slot: *u8, col_type: Pq_Type, 
             val := ntoh(<< cast(*s64) data);
             return write_integer(col, name, info, slot, col_type, val);
 
+        case .FLOAT4;
+            if info.type != Type_Info_Tag.FLOAT {
+                log_error("Error: Trying to write float4 column % into member field \"%\" of type %", col, name, info.type);
+                return false;
+            }
+
+            if info.runtime_size == 4 {
+                << (cast(*float32) slot) = ntoh(<<(cast(*float32) data));
+            } else {
+                assert(info.runtime_size == 8);
+                << (cast(*float64) slot) = cast(float64) ntoh(<<(cast(*float32) data));
+            }
+            return true;
+
         case .FLOAT8;
             if info.type != Type_Info_Tag.FLOAT {
-                log_error("Error: Trying to write float column % into member field \"%\" of type %", col, name, info.type);
+                log_error("Error: Trying to write float8 column % into member field \"%\" of type %", col, name, info.type);
                 return false;
             }
 
