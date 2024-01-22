@@ -40,9 +40,8 @@ execute :: (conn: *PGconn, $T: Type, command: string, args: .. Any, $ignore_unkn
     defer PQclear(query_res);
 
     has_results: bool;
-    update_rows: int;
     results: [] T;
-    has_results, update_rows, success = check_query_result(query_res);
+    has_results, success = check_query_result(query_res);
     if !success        return results, false;
 
     if has_results {
@@ -61,7 +60,7 @@ execute :: (conn: *PGconn, command: string, args: .. Any) -> success: bool, upda
 
     has_results: bool;
     update_rows: int;
-    has_results, update_rows, success = check_query_result(query_res);
+    has_results, success, update_rows = check_query_result(query_res);
 
     return success, update_rows;
 }
@@ -185,29 +184,29 @@ get_last_query_result :: (conn: *PGconn) -> *PGresult {
     return query_result;
 }
 
-check_query_result :: (query_res: *PGresult) -> has_results: bool, updated_rows: int, success: bool {
+check_query_result :: (query_res: *PGresult) -> has_results: bool, success: bool, updated_rows: int {
     res_status := PQresultStatus(query_res);
     if res_status == {
         case ExecStatusType.PGRES_EMPTY_QUERY;
-            return false, 0, true;
+            return false, true, 0;
         case ExecStatusType.PGRES_COMMAND_OK;
             rows_affected := to_string(PQcmdTuples(query_res));
             rows_affected_count := parse_int(*rows_affected);
 
-            return false, rows_affected_count, true;
+            return false, true, rows_affected_count;
         case ExecStatusType.PGRES_TUPLES_OK;
-            return true, 0, true;
+            return true, true, 0;
         case ExecStatusType.PGRES_FATAL_ERROR;
             error_message := to_string(PQresultErrorMessage(query_res));
             log_error("Fatal error: %", error_message);
-            return false, 0, false;
+            return false, false, 0;
         case ExecStatusType.PGRES_NONFATAL_ERROR;
             error_message := to_string(PQresultErrorMessage(query_res));
             log_error("Non-fatal error: %", error_message);
-            return false, 0, false;
+            return false, false, 0;
         case;
             log_error("Query result status: %", res_status);
-            return false, 0, false;
+            return false, false, 0;
     }
 }
 
