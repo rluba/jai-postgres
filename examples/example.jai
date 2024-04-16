@@ -15,7 +15,7 @@ main :: () {
     QUERY :: #string END
         SELECT
             1::int2, 2::int4, 3::int8,
-            2.5::float8, 3.5::numeric(8, 2),
+            2.5::float8, 3.5::float8 as float8_to_4, 4.5::float4, 5.5::float4 as float4_to_8, 6.5::numeric(8, 2),
             true "boolean_true",
             false "boolean_false",
             'a'::char(3) "char", 'b'::bpchar "bpchar", 'c'::varchar, 'd'::name, 'e'::text,
@@ -40,7 +40,10 @@ main :: () {
     assert(result.int4          == 2);
     assert(result.int8          == 3);
     assert(result.float8        == 2.5);
-    assert(result.numeric       == "3.50");
+    assert(result.float8_to_4   == 3.5);
+    assert(result.float4        == 4.5);
+    assert(result.float4_to_8   == 5.5);
+    assert(result.numeric       == "6.50");
     assert(result.boolean_true  == true);
     assert(result.boolean_false == false);
     assert(result.char          == "a  ");
@@ -65,6 +68,9 @@ Test :: struct {
     int4:                 int;
     int8:                 s64;
     float8:               float64;
+    float8_to_4:          float32;
+    float4:               float32;
+    float4_to_8:          float64;
     numeric:              string;
     boolean_true:         bool;
     boolean_false:        bool;

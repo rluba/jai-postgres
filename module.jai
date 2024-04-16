@@ -51,7 +51,7 @@ execute :: (conn: *PGconn, $T: Type, command: string, args: .. Any, $ignore_unkn
 }
 
 // Execute a statement without parsing the result (eg. for DELETE et al)
-execute :: (conn: *PGconn, command: string, args: .. Any) -> success: bool {
+execute :: (conn: *PGconn, command: string, args: .. Any) -> success: bool, update_rows: int {
     success := send_query(conn, command, ..args);
     if !success false;
 
@@ -59,9 +59,10 @@ execute :: (conn: *PGconn, command: string, args: .. Any) -> success: bool {
     defer PQclear(query_res);
 
     has_results: bool;
-    has_results, success = check_query_result(query_res);
+    update_rows: int;
+    has_results, success, update_rows = check_query_result(query_res);
 
-    return success;
+    return success, update_rows;
 }
 
 send_query :: (conn: *PGconn, command: string, args: .. Any) -> success: bool {
@@ -183,26 +184,29 @@ get_last_query_result :: (conn: *PGconn) -> *PGresult {
     return query_result;
 }
 
-check_query_result :: (query_res: *PGresult) -> has_results: bool, success: bool {
+check_query_result :: (query_res: *PGresult) -> has_results: bool, success: bool, updated_rows: int {
     res_status := PQresultStatus(query_res);
     if res_status == {
         case ExecStatusType.PGRES_EMPTY_QUERY;
-            return false, true;
+            return false, true, 0;
         case ExecStatusType.PGRES_COMMAND_OK;
-            return false, true;
+            rows_affected := to_string(PQcmdTuples(query_res));
+            rows_affected_count := string_to_int(rows_affected);
+
+            return false, true, rows_affected_count;
         case ExecStatusType.PGRES_TUPLES_OK;
-            return true, true;
+            return true, true, 0;
         case ExecStatusType.PGRES_FATAL_ERROR;
             error_message := to_string(PQresultErrorMessage(query_res));
             log_error("Fatal error: %", error_message);
-            return false, false;
+            return false, false, 0;
         case ExecStatusType.PGRES_NONFATAL_ERROR;
             error_message := to_string(PQresultErrorMessage(query_res));
             log_error("Non-fatal error: %", error_message);
-            return false, false;
+            return false, false, 0;
         case;
             log_error("Query result status: %", res_status);
-            return false, false;
+            return false, false, 0;
     }
 }
 
@@ -297,14 +301,28 @@ assign_member :: (name: string, info: *Type_Info, slot: *u8, col_type: Pq_Type, 
             val := ntoh(<< cast(*s64) data);
             return write_integer(col, name, info, slot, col_type, val);
 
-        case .FLOAT8;
+        case .FLOAT4;
             if info.type != Type_Info_Tag.FLOAT {
-                log_error("Error: Trying to write float column % into member field \"%\" of type %", col, name, info.type);
+                log_error("Error: Trying to write float4 column % into member field \"%\" of type %", col, name, info.type);
                 return false;
             }
 
             if info.runtime_size == 4 {
                 << (cast(*float32) slot) = ntoh(<<(cast(*float32) data));
+            } else {
+                assert(info.runtime_size == 8);
+                << (cast(*float64) slot) = cast(float64) ntoh(<<(cast(*float32) data));
+            }
+            return true;
+
+        case .FLOAT8;
+            if info.type != Type_Info_Tag.FLOAT {
+                log_error("Error: Trying to write float8 column % into member field \"%\" of type %", col, name, info.type);
+                return false;
+            }
+
+            if info.runtime_size == 4 {
+                << (cast(*float32) slot) = cast(float32) ntoh(<<(cast(*float64) data));
             } else {
                 assert(info.runtime_size == 8);
                 << (cast(*float64) slot) = ntoh(<<(cast(*float64) data));
@@ -586,7 +604,6 @@ str_from_numeric :: (data: *u8, len: int, row: int, col: int) -> string, success
 #import "Basic";
 #import "Pool";
 Reflection :: #import "Reflection";
-
 
 #load "byte_order.jai";
 #load "pq_types.jai";
