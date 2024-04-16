@@ -477,14 +477,14 @@ write_integer :: (col: int, name: string, info: *Type_Info, pointer: *void, col_
     int_info := cast(*Type_Info_Integer) info;
 
     if int_info.signed {
-        valid, low, high := range_check_and_store(value, int_info, pointer);
+        valid, low, high := Reflection.range_check_and_store(value, int_info, pointer);
 
         if !valid {
             log_error("Value % of column % is out of range for \"%\". (The value must be between % and %.)", value, col, name, low, high);
             return false;
         }
     } else {
-        valid, low, high := range_check_and_store(cast(u64) value, int_info, pointer);  // Different overload from the above!
+        valid, low, high := Reflection.range_check_and_store(cast(u64) value, int_info, pointer);  // Different overload from the above!
 
         if !valid {
             log_error("Value % of column % is out of range for \"%\". (The value must be between % and %.)", value, col, name, low, high);
@@ -493,63 +493,6 @@ write_integer :: (col: int, name: string, info: *Type_Info, pointer: *void, col_
     }
 
     return true;
-}
-
-range_check_and_store :: (value: $T, info: *Type_Info_Integer, pointer: *void) -> (success: bool, low: T, high: T) {
-    store :: (pointer: *void, value: T, size: int) {
-        if size == {
-            case 1;
-                << cast(*s8)  pointer = xx,no_check value;
-            case 2;
-                << cast(*s16) pointer = xx,no_check value;
-            case 4;
-                << cast(*s32) pointer = xx,no_check value;
-            case 8;
-                << cast(*s64) pointer = xx,no_check value;
-            case;
-            assert(false);
-        }
-    }
-
-    #assert((T == u64) || (T == s64));
-
-    size := info.runtime_size;
-
-    #if T == u64 {
-        low, high := unsigned_integer_range_from_size(size);
-        if (value < low) || (value > high)  return false, low, high;
-
-        store(pointer, value, size);
-        return true, low, high;
-    } else {
-        low, high := signed_integer_range_from_size(size);
-        if (value < low) || (value > high)  return false, low, high;
-
-        store(pointer, value, size);
-        return true, low, high;
-    }
-}
-
-signed_integer_range_from_size :: (size_in_bytes: int) -> (low: s64, high: s64) {
-    assert((size_in_bytes == 1) || (size_in_bytes == 2) || (size_in_bytes == 4) || (size_in_bytes == 8));
-
-    high := (1 << (size_in_bytes*8-1)) - 1;
-    low  := ~high;
-
-    return low, high;
-}
-
-unsigned_integer_range_from_size :: (size_in_bytes: int) -> (low: u64, high: u64) {
-    assert((size_in_bytes == 1) || (size_in_bytes == 2) || (size_in_bytes == 4) || (size_in_bytes == 8));
-
-    high: u64 = ---;
-    if size_in_bytes == 8 {
-        high = cast(u64) 0xffff_ffff_ffff_ffff;  // Hardcode 8 to prevent unpredictable behavior due to platform-specific details. In the future the outcome of << will be language-defined in all cases.
-    } else {
-        high = cast(u64) (1 << (size_in_bytes*8)) - 1;  // @CompilerBug: Why do we need to cast the 1? That is dumb.
-    }
-
-    return 0, high;
 }
 
 str_from_numeric :: (data: *u8, len: int, row: int, col: int) -> string, success: bool {
@@ -642,6 +585,8 @@ str_from_numeric :: (data: *u8, len: int, row: int, col: int) -> string, success
 
 #import "Basic";
 #import "Pool";
+Reflection :: #import "Reflection";
+
 
 #load "byte_order.jai";
 #load "pq_types.jai";
