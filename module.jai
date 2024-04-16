@@ -191,7 +191,7 @@ check_query_result :: (query_res: *PGresult) -> has_results: bool, success: bool
             return false, true, 0;
         case ExecStatusType.PGRES_COMMAND_OK;
             rows_affected := to_string(PQcmdTuples(query_res));
-            rows_affected_count := parse_int(*rows_affected);
+            rows_affected_count := string_to_int(rows_affected);
 
             return false, true, rows_affected_count;
         case ExecStatusType.PGRES_TUPLES_OK;
@@ -604,7 +604,6 @@ str_from_numeric :: (data: *u8, len: int, row: int, col: int) -> string, success
 #import "Basic";
 #import "Pool";
 Reflection :: #import "Reflection";
-#import "String";
 
 #load "byte_order.jai";
 #load "pq_types.jai";
