@@ -26,7 +26,8 @@ main :: () {
             -- '2023-10-24'::date real_date_apollo,          -- Test writing date into Apollo_Time
             'Hello, Sailor!'::bytea sailor_bytes,         -- Test [] case
             'Hello, Sailor!'::bytea sailor_bytes_dynamic, -- Test [..] case
-            'Hello, Sailor!'::bytea sailor_bytes_fixed    -- Test [n] case
+            'Hello, Sailor!'::bytea sailor_bytes_fixed,    -- Test [n] case
+            '01951a87-c21c-726c-ba20-e0da37db52cf'::UUID -- UUID (which is a [16]u8) test case
     END
 
     results: [] Test;
@@ -59,8 +60,19 @@ main :: () {
     assert(cast(string) result.sailor_bytes         == "Hello, Sailor!");
     assert(cast(string) result.sailor_bytes_dynamic == "Hello, Sailor!");
     assert(cast(string) result.sailor_bytes_fixed   == "Hello, Sailor!");
+    // These bytes are the UUIDv7: 01951a87-c21c-726c-ba20-e0da37db52cf
+    assert(uuid_equal(result.uuid, u8.[1, 149, 26, 135, 194, 28, 114, 108, 186, 32, 224, 218, 55, 219, 82, 207]));
     log("% vs % vs %", result.time_wo_tz, result.time_with_tz, result.time_utc);
     log("ALL OK");
+}
+
+UUID :: [16]u8;
+
+// UUIDs are just two s64 values, so equality is simply comparing each
+// of the two s64 values to each other from u1 and u2
+uuid_equal :: (u1: UUID, u2: UUID) -> bool {
+    a, b := u1.([2]s64,force), u2.([2]s64,force);
+    return a[0] == b[0] && a[1] == b[1];
 }
 
 Test :: struct {
@@ -90,6 +102,7 @@ Test :: struct {
     sailor_bytes:         [] u8;
     sailor_bytes_dynamic: [..] u8;
     sailor_bytes_fixed:   [14] u8;
+    uuid: UUID;
 }
 
 #import,file "../module.jai";
