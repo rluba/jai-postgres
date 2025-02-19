@@ -75,6 +75,26 @@ uuid_equal :: (u1: UUID, u2: UUID) -> bool {
     return a[0] == b[0] && a[1] == b[1];
 }
 
+uuid_to_string :: (uuid: UUID) -> string {
+
+    push_context {
+
+        context.print_style.default_format_int.base = 16;
+        context.print_style.default_format_int.minimum_digits = 2;
+
+        formatted := sprint("%0%0%0%0-%0%0-%0%0-%0%0-%0%0%0%0%0%0",
+            uuid[0], uuid[1], uuid[2], uuid[3],
+            uuid[4], uuid[5],
+            uuid[6], uuid[7],
+            uuid[8], uuid[9],
+            uuid[10], uuid[11],
+            uuid[12], uuid[13], uuid[14], uuid[15],
+        );
+
+        return formatted;
+    }
+}
+
 Test :: struct {
     int2:                 int;
     int4:                 int;
