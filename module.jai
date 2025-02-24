@@ -412,6 +412,7 @@ assign_member :: (name: string, info: *Type_Info, slot: *u8, col_type: Pq_Type, 
                 return write_integer(col, name, info, slot, col_type, val);
             }
 
+        case .UUID; #through; // UUIDs are simplye [16]u8, returned from postgres as a byte array
         case .BYTEA;
             if info.type == .ARRAY {
                 array_info := cast(*Type_Info_Array) info;

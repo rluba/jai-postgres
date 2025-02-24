@@ -74,4 +74,5 @@ Using a Pool allocator around your `execute` calls might be a good idea.
 * `DATE`, `TIMESTAMP`, `TIMESTAMPTZ`
 * `BYTEA`
 * `OID`
+* `UUID`
 * Custom enum types (`CREATE TYPE … AS ENUM`), which can be parsed into `string` or `enum` member fields.
