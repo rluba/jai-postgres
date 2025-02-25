@@ -24,6 +24,7 @@ remove_pg_type_handler :: (oid: Oid) -> (success: bool) {
     for pg_custom_type_handlers {
         
         if it.oid == oid {
+            free(it.name);
             remove it;
             return true;
         }
