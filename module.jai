@@ -122,11 +122,21 @@ send_query :: (conn: *PGconn, command: string, args: .. Any) -> success: bool {
 
             case .STRING;
                 str := cast(*string) arg.value_pointer;
-                param_types[index] = cast(Oid) Pq_Type.VARCHAR;
-                param_values[index] = str.data;
+                param_types[index] = cast(Oid) Pq_Type.TEXT;
+                param_values[index] = ifx str.data else ""; // This handles empty strings. Sending no data means null string
                 param_lengths[index] = cast(s32) str.count;
                 param_formats[index] = 1;
 
+            case .BOOL;
+                bool_as_num := ifx arg.value_pointer.(*bool).* then cast(u8) 1 else cast(u8) 0;
+                be_value := alloc(1).(*u8);
+                network_val := hton(bool_as_num);
+                memcpy(be_value, *network_val, 1);
+
+                param_types[index] = Pq_Type.BOOL.(Oid);
+                param_values[index] = be_value;
+                param_lengths[index] = 1;
+                param_formats[index] = 1;
 
             // case .ARRAY;
                 // @ToDo: Implement binary format according to array_recv format.
