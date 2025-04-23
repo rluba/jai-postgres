@@ -116,17 +116,23 @@ send_query :: (conn: *PGconn, command: string, args: .. Any) -> success: bool {
                     be_val := hton(<<(cast(*float64) arg.value_pointer));
                     memcpy(be_value, *be_val, arg.type.runtime_size);
                 }
-                param_values[index] = be_value;
+                param_values[index]  = be_value;
                 param_lengths[index] = cast(s32) arg.type.runtime_size;
                 param_formats[index] = 1;
 
             case .STRING;
                 str := cast(*string) arg.value_pointer;
-                param_types[index] = cast(Oid) Pq_Type.VARCHAR;
-                param_values[index] = str.data;
+                param_types[index]   = cast(Oid) Pq_Type.TEXT;
+                param_values[index]  = ifx str.data else ""; // This handles empty strings. Sending no data means null string
                 param_lengths[index] = cast(s32) str.count;
                 param_formats[index] = 1;
 
+            case .BOOL;
+                val := cast(*bool) arg.value_pointer;
+                param_types[index]   = cast(Oid) Pq_Type.BOOL;
+                param_values[index]  = ifx val.* then *BOOL_TRUE_VALUE else *BOOL_FALSE_VALUE;
+                param_lengths[index] = 1;
+                param_formats[index] = 1;
 
             // case .ARRAY;
                 // @ToDo: Implement binary format according to array_recv format.
@@ -601,6 +607,9 @@ str_from_numeric :: (data: *u8, len: int, row: int, col: int) -> string, success
 
     return builder_to_string(*builder), true;
 }
+
+BOOL_TRUE_VALUE:  u8 = 1;
+BOOL_FALSE_VALUE: u8 = 0;
 
 #import "Basic";
 #import "Pool";
