@@ -12,6 +12,7 @@ main :: () {
     if !success        exit(1);
 
     // Let’s just test deserializing all the supported column types:
+    log("Test 1");
     QUERY :: #string END
         SELECT
             1::int2, 2::int4, 3::int8,
@@ -63,6 +64,40 @@ main :: () {
     // These bytes are the UUIDv7: 01951a87-c21c-726c-ba20-e0da37db52cf
     assert(uuid_equal(result.uuid, u8.[1, 149, 26, 135, 194, 28, 114, 108, 186, 32, 224, 218, 55, 219, 82, 207]));
     log("% vs % vs %", result.time_wo_tz, result.time_with_tz, result.time_utc);
+
+    // Let’s try a serializing-deserializing roundtrip
+    log("Test 2");
+    QUERY2 :: #string END
+        SELECT
+            $1::int2,
+            $2::float8, $3::float4,
+            $4 "boolean_true",
+            $5 "boolean_false",
+            $6::varchar,
+            $7::text
+    END
+
+    v1: int = 256;
+    v2: float64 = 1.5;
+    v3: float = 2.5;
+    v4 := true;
+    v5 := false;
+    v6: string;
+    v7 := "Something";
+    results, success = execute(conn, Test, QUERY2, v1, v2, v3, v4, v5, v6, v7);
+    assert(success);
+    log("Results: %", results);
+    assert(results.count == 1);
+
+    result = results[0];
+    assert(result.int2          == 256);
+    assert(result.float8        == 1.5);
+    assert(result.float4        == 2.5);
+    assert(result.boolean_true  == true);
+    assert(result.boolean_false == false);
+    assert(result.varchar       == "");
+    assert(result.text          == "Something");
+
     log("ALL OK");
 }
 
